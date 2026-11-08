@@ -11,5 +11,5 @@
 		"noEmit": true,
 		"skipLibCheck": true
 	},
-	"include": ["src", "tsdown.config.ts"]
+	"include": ["src", "playground", "tsdown.config.ts"]
 }
