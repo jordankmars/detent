@@ -206,6 +206,12 @@ function WheelBody<T>({
 		[binding, model, loop, wanted, settled],
 	);
 
+	const { register } = internal;
+	useEffect(
+		() => register?.(engine, element.current as HTMLElement),
+		[engine, register],
+	);
+
 	const { reducedMotion } = root;
 	useEffect(() => {
 		engine.setReducedMotion(reducedMotion);
