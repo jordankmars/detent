@@ -72,6 +72,9 @@ function bindWheel(element: HTMLElement, options: BindOptions) {
 		wheel.pointerUp(event.clientY - (rect.top + rect.height / 2));
 	};
 	const onPointerCancel = () => wheel.pointerCancel();
+	const onKeyDown = (event: KeyboardEvent) => {
+		if (wheel.key(event.key)) event.preventDefault();
+	};
 
 	element.setAttribute("aria-valuemin", "0");
 	element.setAttribute("aria-valuemax", String(items.length - 1));
@@ -79,6 +82,7 @@ function bindWheel(element: HTMLElement, options: BindOptions) {
 	element.addEventListener("pointermove", onPointerMove);
 	element.addEventListener("pointerup", onPointerUp);
 	element.addEventListener("pointercancel", onPointerCancel);
+	element.addEventListener("keydown", onKeyDown);
 	const unsubscribe = wheel.subscribe(paint);
 	updateAria(wheel.index);
 	paint();
@@ -92,6 +96,7 @@ function bindWheel(element: HTMLElement, options: BindOptions) {
 			element.removeEventListener("pointermove", onPointerMove);
 			element.removeEventListener("pointerup", onPointerUp);
 			element.removeEventListener("pointercancel", onPointerCancel);
+			element.removeEventListener("keydown", onKeyDown);
 			for (const row of rows) row.remove();
 		},
 	};

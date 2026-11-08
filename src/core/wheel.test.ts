@@ -187,6 +187,75 @@ describe("createWheel", () => {
 		expect(t.wheel.dragging).toBe(false);
 	});
 
+	describe("keyboard", () => {
+		it("steps one item with the arrow keys", () => {
+			const t = setup({ index: 5 });
+			expect(t.wheel.key("ArrowDown")).toBe(true);
+			t.scheduler.flush();
+			expect(t.wheel.index).toBe(6);
+			t.wheel.key("ArrowUp");
+			t.scheduler.flush();
+			expect(t.wheel.index).toBe(5);
+		});
+
+		it("steps five items with page up and down", () => {
+			const t = setup({ index: 5 });
+			t.wheel.key("PageDown");
+			t.scheduler.flush();
+			expect(t.wheel.index).toBe(10);
+			t.wheel.key("PageUp");
+			t.scheduler.flush();
+			expect(t.wheel.index).toBe(5);
+		});
+
+		it("adds up quick presses before the wheel settles", () => {
+			const t = setup({ index: 0, count: 60, loop: true });
+			t.wheel.key("ArrowDown");
+			t.scheduler.advance(2);
+			t.wheel.key("ArrowDown");
+			t.scheduler.advance(2);
+			t.wheel.key("ArrowDown");
+			t.scheduler.flush();
+			expect(t.wheel.index).toBe(3);
+		});
+
+		it("stops at the ends when not looping", () => {
+			const t = setup({ index: 10 });
+			t.wheel.key("PageDown");
+			t.scheduler.flush();
+			expect(t.wheel.index).toBe(11);
+		});
+
+		it("wraps when looping", () => {
+			const t = setup({ index: 0, loop: true });
+			t.wheel.key("ArrowUp");
+			t.scheduler.flush();
+			expect(t.wheel.index).toBe(11);
+		});
+
+		it("jumps to the ends with home and end", () => {
+			const t = setup({ index: 5 });
+			expect(t.wheel.key("End")).toBe(true);
+			t.scheduler.flush();
+			expect(t.wheel.index).toBe(11);
+			t.wheel.key("Home");
+			t.scheduler.flush();
+			expect(t.wheel.index).toBe(0);
+		});
+
+		it("leaves home and end alone when looping", () => {
+			const t = setup({ index: 5, loop: true });
+			expect(t.wheel.key("Home")).toBe(false);
+			expect(t.wheel.key("End")).toBe(false);
+		});
+
+		it("ignores other keys", () => {
+			const t = setup();
+			expect(t.wheel.key("a")).toBe(false);
+			expect(t.wheel.key("Tab")).toBe(false);
+		});
+	});
+
 	describe("setIndex", () => {
 		it("jumps without animating by default", () => {
 			const t = setup();

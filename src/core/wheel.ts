@@ -73,6 +73,12 @@ export interface Wheel {
 	pointerUp(offsetFromCenter?: number): void;
 	pointerCancel(): void;
 
+	/**
+	 * Handle a key press. Returns true when the key was used, so the caller
+	 * knows to prevent the default action.
+	 */
+	key(key: string): boolean;
+
 	/** Select an item, either jumping there or animating along the shortest path. */
 	setIndex(index: number, options?: { animate?: boolean }): void;
 
@@ -90,6 +96,13 @@ const STRETCH = 1.5;
 const MAX_VELOCITY = 40;
 /** Seconds of coasting used to project where a flick would end up. */
 const PROJECTION = 0.2;
+/** Items moved per key press. */
+const KEY_STEPS: Record<string, number> = {
+	ArrowUp: -1,
+	ArrowDown: 1,
+	PageUp: -5,
+	PageDown: 5,
+};
 
 interface Drag {
 	y: number;
@@ -150,7 +163,7 @@ export function createWheel(options: WheelOptions): Wheel {
 	}
 
 	/** Animate to a target, optionally starting with some velocity. */
-	function settle(to: number, from = velocity) {
+	function settle(to: number, from = 0) {
 		target = normalize(to);
 		velocity = from;
 		frames.add(tick);
@@ -246,6 +259,25 @@ export function createWheel(options: WheelOptions): Wheel {
 			if (!drag) return;
 			drag = null;
 			release();
+		},
+
+		key(key) {
+			const step = KEY_STEPS[key];
+			if (step) {
+				// Step from where the wheel is heading, so quick presses add up.
+				settle(Math.round(target) + step);
+				return true;
+			}
+			if (loop) return false;
+			if (key === "Home") {
+				settle(0);
+				return true;
+			}
+			if (key === "End") {
+				settle(count - 1);
+				return true;
+			}
+			return false;
 		},
 
 		setIndex(next, { animate = false } = {}) {
