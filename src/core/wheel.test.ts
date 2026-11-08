@@ -475,6 +475,18 @@ describe("createWheel", () => {
 			expect(t.wheel.position).toBe(27);
 		});
 
+		it("pulls a moving target back when the wheel shrinks", () => {
+			const t = setup({ index: 20, count: 31 });
+			t.wheel.setIndex(30, { animate: true });
+			t.scheduler.advance(2);
+			expect(t.wheel.index).toBeLessThan(28);
+			t.wheel.setCount(28);
+			expect(t.wheel.target).toBe(27);
+			t.scheduler.flush();
+			expect(t.wheel.position).toBe(27);
+			expect(t.wheel.slots()[5]).toMatchObject({ index: 27, selected: true });
+		});
+
 		it("adds new items without moving", () => {
 			const t = setup({ index: 27, count: 28 });
 			t.wheel.setCount(31);

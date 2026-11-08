@@ -405,7 +405,7 @@ export function createWheel(options: WheelOptions): Wheel {
 				return notify();
 			}
 			count = next;
-			if (index > count - 1 && !drag) {
+			if (target > count - 1 && !drag) {
 				settle(count - 1, velocity);
 			} else {
 				notify();
