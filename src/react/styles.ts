@@ -6,7 +6,7 @@
  */
 export const DEFAULT_STYLES = `
 :where([data-detent-root]){gap:var(--detent-gap,2px)}
-:where([data-detent-band]){background:var(--detent-band-background,color-mix(in srgb,currentColor 9%,transparent));border-radius:var(--detent-band-radius,10px)}
+:where([data-detent-band]){left:var(--detent-band-inset,0);right:var(--detent-band-inset,0);background:var(--detent-band-background,color-mix(in srgb,currentColor 9%,transparent));border-radius:var(--detent-band-radius,10px)}
 :where([data-detent-wheel]){flex:var(--detent-wheel-flex,1 1 0);min-width:0;cursor:grab;-webkit-mask-image:linear-gradient(transparent,#000 28%,#000 72%,transparent);mask-image:linear-gradient(transparent,#000 28%,#000 72%,transparent)}
 :where([data-detent-wheel]:active){cursor:grabbing}
 :where([data-detent-wheel][data-disabled]){cursor:default;opacity:var(--detent-disabled-opacity,.5)}

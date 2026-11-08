@@ -139,8 +139,6 @@ function RootImpl<V>(
 				aria-hidden
 				style={{
 					position: "absolute",
-					left: 0,
-					right: 0,
 					top: "50%",
 					height: bandHeight,
 					marginTop: -bandHeight / 2,
