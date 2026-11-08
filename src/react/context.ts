@@ -1,4 +1,9 @@
-import { createContext, type RefObject } from "react";
+import {
+	createContext,
+	type RefObject,
+	useEffect,
+	useLayoutEffect,
+} from "react";
 import type { Scheduler, Wheel } from "../core";
 
 export interface RootContextValue {
@@ -42,3 +47,7 @@ export function safely(callback: () => void) {
 		else console.error(error);
 	}
 }
+
+/** React 18 warns about `useLayoutEffect` during server rendering. */
+export const useIsomorphicLayoutEffect =
+	typeof document === "undefined" ? useEffect : useLayoutEffect;

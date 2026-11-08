@@ -4,15 +4,20 @@ import { describe, expect, it } from "vitest";
 import { Root } from "./root";
 import { Wheel } from "./wheel";
 
+/** The value of each wheel: the one row marked as selected, in order. */
 const spoken = (html: string) =>
-	[...html.matchAll(/aria-valuetext="([^"]*)"/g)].map((match) => match[1]);
+	[...html.matchAll(/data-selected="" aria-hidden="true"[^>]*>([^<]*)</g)].map(
+		(match) => match[1],
+	);
+
+const ITEMS = ["a", "b", "c"];
 
 function WrappedWithIndex() {
-	return <Wheel index={2} />;
+	return <Wheel items={ITEMS} index={2} />;
 }
 
 function WrappedWithoutIndex() {
-	return <Wheel />;
+	return <Wheel items={ITEMS} />;
 }
 
 describe("wheel positions", () => {
@@ -24,9 +29,9 @@ describe("wheel positions", () => {
 		expect(
 			render(
 				<>
-					<Wheel />
-					<Wheel />
-					<Wheel />
+					<Wheel items={ITEMS} />
+					<Wheel items={ITEMS} />
+					<Wheel items={ITEMS} />
 				</>,
 			),
 		).toEqual(["a", "b", "c"]);
@@ -36,10 +41,10 @@ describe("wheel positions", () => {
 		expect(
 			render(
 				<>
-					<Wheel />
+					<Wheel items={ITEMS} />
 					<span>:</span>
 					<div>
-						<Wheel />
+						<Wheel items={ITEMS} />
 					</div>
 				</>,
 			),
@@ -55,6 +60,8 @@ describe("wheel positions", () => {
 	});
 
 	it("requires a Root", () => {
-		expect(() => renderToString(<Wheel />)).toThrow(/inside Detent.Root/);
+		expect(() => renderToString(<Wheel items={ITEMS} />)).toThrow(
+			/inside Detent.Root/,
+		);
 	});
 });
