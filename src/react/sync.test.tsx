@@ -121,3 +121,132 @@ describe("items changing", () => {
 		expect(wheel.getAttribute("aria-valuenow")).toBe("2");
 	});
 });
+
+describe("reporting user changes", () => {
+	const ITEM = 36;
+	const press = (wheel: Element, y = 100, pointerId = 1) =>
+		fireEvent.pointerDown(wheel, { clientY: y, pointerId, button: 0 });
+	const move = (wheel: Element, y: number, pointerId = 1) =>
+		fireEvent.pointerMove(wheel, { clientY: y, pointerId });
+
+	it("reports each item crossed", () => {
+		const { wheel, onValueChange } = setup(["a"]);
+		press(wheel);
+		move(wheel, 100 - ITEM);
+		move(wheel, 100 - ITEM * 2);
+		expect(onValueChange.mock.calls).toEqual([[["b"]], [["c"]]]);
+	});
+
+	it("updates itself when uncontrolled", () => {
+		const harness = createHarness();
+		const { container } = render(
+			<Root defaultValue={["a"]}>
+				<Wheel items={LETTERS} />
+			</Root>,
+			{ wrapper: harness.wrapper },
+		);
+		const wheel = wheels(container)[0];
+		fireEvent.keyDown(wheel, { key: "ArrowDown" });
+		harness.flush();
+		expect(selectedText(wheel)).toBe("b");
+	});
+
+	it("reports complete arrays even with no starting value", () => {
+		const harness = createHarness();
+		const onValueChange = vi.fn();
+		const { container } = render(
+			<Root onValueChange={onValueChange}>
+				<Wheel items={LETTERS} />
+				<Wheel items={["x", "y"]} />
+			</Root>,
+			{ wrapper: harness.wrapper },
+		);
+		press(wheels(container)[1]);
+		move(wheels(container)[1], 100 - ITEM);
+		expect(onValueChange).toHaveBeenLastCalledWith(["a", "y"]);
+	});
+
+	it("keeps two wheels moving at once from overwriting each other", () => {
+		const harness = createHarness();
+		const onValueChange = vi.fn();
+		const { container } = render(
+			// The value never updates, as if React hadn't caught up yet.
+			<Root value={["a", "a"]} onValueChange={onValueChange}>
+				<Wheel items={LETTERS} />
+				<Wheel items={LETTERS} />
+			</Root>,
+			{ wrapper: harness.wrapper },
+		);
+		const [first, second] = wheels(container);
+		press(first, 100, 1);
+		press(second, 100, 2);
+		move(first, 100 - ITEM, 1);
+		move(second, 100 - ITEM, 2);
+		expect(onValueChange).toHaveBeenLastCalledWith(["b", "b"]);
+	});
+
+	it("ignores value changes while being dragged", () => {
+		const { wheel, update } = setup(["a"]);
+		press(wheel);
+		move(wheel, 100 - ITEM);
+		update(["e"]);
+		expect(selectedText(wheel)).toBe("b");
+	});
+
+	it("isn't pulled back by a value that lags behind a flick", () => {
+		const { harness, wheel, update, onValueChange } = setup(["a"]);
+		fireEvent.keyDown(wheel, { key: "End" });
+		harness.advance(12);
+		const reported = onValueChange.mock.calls.map(([value]) => value[0]);
+		expect(reported.length).toBeGreaterThan(1);
+		// React delivers an older value while the wheel has moved on.
+		update([reported[0]]);
+		harness.flush();
+		expect(selectedText(wheel)).toBe("e");
+	});
+
+	it("reports where the wheel is when grabbed mid-animation", () => {
+		const { harness, wheel, update, onValueChange } = setup(["a"]);
+		update(["e"]);
+		harness.advance(10);
+		const passing = selectedText(wheel);
+		expect(passing).not.toBe("e");
+		press(wheel);
+		expect(onValueChange).toHaveBeenLastCalledWith([passing]);
+	});
+
+	it("doesn't take over an animation for keys it doesn't use", () => {
+		const { harness, wheel, update, onValueChange } = setup(["a"]);
+		update(["e"]);
+		harness.advance(4);
+		fireEvent.keyDown(wheel, { key: "Tab" });
+		harness.flush();
+		expect(onValueChange).not.toHaveBeenCalled();
+	});
+
+	it("keeps every wheel running when a callback throws", () => {
+		const reportError = vi.fn();
+		vi.stubGlobal("reportError", reportError);
+		const harness = createHarness();
+		const { container } = render(
+			<Root
+				defaultValue={["a", "a"]}
+				onValueChange={() => {
+					throw new Error("boom");
+				}}
+			>
+				<Wheel items={LETTERS} />
+				<Wheel items={LETTERS} />
+			</Root>,
+			{ wrapper: harness.wrapper },
+		);
+		const [first, second] = wheels(container);
+		fireEvent.keyDown(first, { key: "ArrowDown" });
+		fireEvent.keyDown(second, { key: "ArrowDown" });
+		harness.flush();
+		expect(reportError).toHaveBeenCalled();
+		expect(selectedText(first)).toBe("b");
+		expect(selectedText(second)).toBe("b");
+		vi.unstubAllGlobals();
+	});
+});

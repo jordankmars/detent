@@ -90,7 +90,19 @@ export function createBinding(
 		overscan: OVERSCAN,
 		reducedMotion: root.reducedMotion,
 		scheduler,
+		onIndexChange(index) {
+			if (userDriven && !syncing && index >= 0) write(index);
+		},
 	});
+
+	/**
+	 * Whether the user is what's moving this wheel. Only then does a new item
+	 * get reported: when the wheel is animating towards a value the parent set,
+	 * reporting each item it passes would send the wheel back to them.
+	 */
+	let userDriven = false;
+	/** True while applying props, when the engine's reports are just echoes. */
+	let syncing = false;
 
 	const rows: (HTMLElement | null)[] = [];
 	/** The text each row shows, to skip writing what's already there. */
@@ -106,7 +118,9 @@ export function createBinding(
 		if (labels.length === 0) {
 			return { now: undefined, max: undefined, text: undefined };
 		}
-		const now = currentIndex();
+		// While heading to a value the parent set, speak that value and not
+		// everything on the way there.
+		const now = userDriven ? currentIndex() : headingIndex();
 		return { now, max: labels.length - 1, text: labels[now] };
 	}
 
@@ -132,7 +146,13 @@ export function createBinding(
 	}
 
 	function input(call: () => boolean) {
-		return call();
+		const previous = userDriven;
+		userDriven = true;
+		const used = call();
+		// Grabbing the wheel mid-animation makes where it is the new value.
+		if (used) write(currentIndex());
+		else userDriven = previous;
+		return used;
 	}
 
 	/** Where the wheel will stop, as an item index. */
@@ -164,6 +184,8 @@ export function createBinding(
 		const wanted = root.value[slot];
 		const latest = root.latest.current;
 
+		syncing = true;
+		userDriven = userDriven && engine.moving;
 		engine.setCount(count);
 		engine.setLoop(loop);
 
@@ -171,7 +193,7 @@ export function createBinding(
 			// Items can arrive later, so hold on to the value until they do.
 			if (wanted !== undefined) latest[slot] = wanted;
 			foundBefore = false;
-		} else {
+		} else if (!userDriven) {
 			// Checked first so a list with repeats doesn't jump to the first one.
 			const current = currentIndex();
 			const found = Object.is(model.values[current], wanted)
@@ -198,6 +220,7 @@ export function createBinding(
 			}
 			foundBefore = found !== -1;
 		}
+		syncing = false;
 		paint();
 	}
 
