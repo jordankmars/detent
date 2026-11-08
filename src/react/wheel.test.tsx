@@ -198,7 +198,7 @@ describe("input", () => {
 
 	it("steps with the keyboard and prevents the default", () => {
 		const { harness, wheel } = mount();
-		expect(fireEvent.keyDown(wheel, { key: "ArrowDown" })).toBe(false);
+		expect(fireEvent.keyDown(wheel, { key: "ArrowUp" })).toBe(false);
 		harness.flush();
 		expect(selectedText(wheel)).toBe("d");
 		expect(fireEvent.keyDown(wheel, { key: "a" })).toBe(true);
@@ -216,7 +216,7 @@ describe("input", () => {
 		const { wheel } = mount(LETTERS, "c", {
 			onKeyDown: (event: KeyboardEvent) => event.preventDefault(),
 		});
-		fireEvent.keyDown(wheel, { key: "ArrowDown" });
+		fireEvent.keyDown(wheel, { key: "ArrowUp" });
 		expect(wheel.getAttribute("aria-valuetext")).toBe("c");
 	});
 });
@@ -227,7 +227,7 @@ describe("disabled", () => {
 		fireEvent.pointerDown(wheel, { clientY: 100, pointerId: 1, button: 0 });
 		fireEvent.pointerMove(wheel, { clientY: 0, pointerId: 1 });
 		expect(selectedText(wheel)).toBe("c");
-		expect(fireEvent.keyDown(wheel, { key: "ArrowDown" })).toBe(true);
+		expect(fireEvent.keyDown(wheel, { key: "ArrowUp" })).toBe(true);
 		expect(fireEvent.wheel(wheel, { deltaY: 10 })).toBe(true);
 	});
 
@@ -269,7 +269,7 @@ describe("accessibility", () => {
 
 	it("updates the spoken value as the wheel moves", () => {
 		const { harness, wheel } = mount();
-		fireEvent.keyDown(wheel, { key: "ArrowDown" });
+		fireEvent.keyDown(wheel, { key: "ArrowUp" });
 		harness.flush();
 		expect(wheel.getAttribute("aria-valuetext")).toBe("d");
 		expect(wheel.getAttribute("aria-valuenow")).toBe("3");

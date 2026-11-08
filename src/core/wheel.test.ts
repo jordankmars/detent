@@ -190,45 +190,45 @@ describe("createWheel", () => {
 	describe("keyboard", () => {
 		it("steps one item with the arrow keys", () => {
 			const t = setup({ index: 5 });
-			expect(t.wheel.key("ArrowDown")).toBe(true);
+			expect(t.wheel.key("ArrowUp")).toBe(true);
 			t.scheduler.flush();
 			expect(t.wheel.index).toBe(6);
-			t.wheel.key("ArrowUp");
+			t.wheel.key("ArrowDown");
 			t.scheduler.flush();
 			expect(t.wheel.index).toBe(5);
 		});
 
 		it("steps five items with page up and down", () => {
 			const t = setup({ index: 5 });
-			t.wheel.key("PageDown");
+			t.wheel.key("PageUp");
 			t.scheduler.flush();
 			expect(t.wheel.index).toBe(10);
-			t.wheel.key("PageUp");
+			t.wheel.key("PageDown");
 			t.scheduler.flush();
 			expect(t.wheel.index).toBe(5);
 		});
 
 		it("adds up quick presses before the wheel settles", () => {
 			const t = setup({ index: 0, count: 60, loop: true });
-			t.wheel.key("ArrowDown");
+			t.wheel.key("ArrowUp");
 			t.scheduler.advance(2);
-			t.wheel.key("ArrowDown");
+			t.wheel.key("ArrowUp");
 			t.scheduler.advance(2);
-			t.wheel.key("ArrowDown");
+			t.wheel.key("ArrowUp");
 			t.scheduler.flush();
 			expect(t.wheel.index).toBe(3);
 		});
 
 		it("stops at the ends when not looping", () => {
 			const t = setup({ index: 10 });
-			t.wheel.key("PageDown");
+			t.wheel.key("PageUp");
 			t.scheduler.flush();
 			expect(t.wheel.index).toBe(11);
 		});
 
 		it("wraps when looping", () => {
 			const t = setup({ index: 0, loop: true });
-			t.wheel.key("ArrowUp");
+			t.wheel.key("ArrowDown");
 			t.scheduler.flush();
 			expect(t.wheel.index).toBe(11);
 		});
@@ -514,7 +514,7 @@ describe("createWheel", () => {
 
 		it("jumps for keys, taps and notches", () => {
 			const t = setup({ index: 5, reducedMotion: true });
-			t.wheel.key("ArrowDown");
+			t.wheel.key("ArrowUp");
 			expect(t.wheel.position).toBe(6);
 			t.wheel.pointerDown(0);
 			t.wheel.pointerUp(t.wheel.slots()[4].y);
@@ -658,7 +658,7 @@ describe("createWheel", () => {
 
 		it("ignores input", () => {
 			const t = setup({ count: 0 });
-			expect(t.wheel.key("ArrowDown")).toBe(false);
+			expect(t.wheel.key("ArrowUp")).toBe(false);
 			expect(t.wheel.key("End")).toBe(false);
 			expect(t.wheel.scroll(ITEM)).toBe(false);
 			t.wheel.pointerDown(0);
@@ -734,7 +734,7 @@ describe("createWheel", () => {
 			t.scheduler.flush();
 			expect(t.wheel.moving).toBe(false);
 
-			t.wheel.key("ArrowDown");
+			t.wheel.key("ArrowUp");
 			expect(t.wheel.moving).toBe(true);
 			t.scheduler.flush();
 			expect(t.wheel.moving).toBe(false);
@@ -747,7 +747,7 @@ describe("createWheel", () => {
 
 		it("reports straight away with reduced motion", () => {
 			const t = resting({ index: 5, reducedMotion: true });
-			t.wheel.key("ArrowDown");
+			t.wheel.key("ArrowUp");
 			expect(t.settled).toEqual([6]);
 			expect(t.wheel.moving).toBe(false);
 		});

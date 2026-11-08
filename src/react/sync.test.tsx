@@ -136,7 +136,7 @@ describe("items changing", () => {
 	it("stays on a repeated value instead of jumping to its first copy", () => {
 		const list = ["a", "b", "a"];
 		const { harness, wheel, update } = setup(["b"], list);
-		fireEvent.keyDown(wheel, { key: "ArrowDown" });
+		fireEvent.keyDown(wheel, { key: "ArrowUp" });
 		harness.flush();
 		update(["a"], list);
 		harness.flush();
@@ -168,7 +168,7 @@ describe("reporting user changes", () => {
 			{ wrapper: harness.wrapper },
 		);
 		const wheel = wheels(container)[0];
-		fireEvent.keyDown(wheel, { key: "ArrowDown" });
+		fireEvent.keyDown(wheel, { key: "ArrowUp" });
 		harness.flush();
 		expect(selectedText(wheel)).toBe("b");
 	});
@@ -263,8 +263,8 @@ describe("reporting user changes", () => {
 			{ wrapper: harness.wrapper },
 		);
 		const [first, second] = wheels(container);
-		fireEvent.keyDown(first, { key: "ArrowDown" });
-		fireEvent.keyDown(second, { key: "ArrowDown" });
+		fireEvent.keyDown(first, { key: "ArrowUp" });
+		fireEvent.keyDown(second, { key: "ArrowUp" });
 		harness.flush();
 		expect(reportError).toHaveBeenCalled();
 		expect(selectedText(first)).toBe("b");
@@ -317,7 +317,7 @@ describe("committing", () => {
 describe("a parent that overrides the wheel", () => {
 	it("snaps back when the change is rejected", () => {
 		const { harness, wheel } = setup(["a"]);
-		fireEvent.keyDown(wheel, { key: "ArrowDown" });
+		fireEvent.keyDown(wheel, { key: "ArrowUp" });
 		harness.flush();
 		harness.flush();
 		expect(selectedText(wheel)).toBe("a");
@@ -383,7 +383,7 @@ describe("reduced motion", () => {
 			{ wrapper: harness.wrapper },
 		);
 		const wheel = wheels(container)[0];
-		fireEvent.keyDown(wheel, { key: "ArrowDown" });
+		fireEvent.keyDown(wheel, { key: "ArrowUp" });
 		expect(selectedText(wheel)).toBe("a");
 	});
 
@@ -393,7 +393,7 @@ describe("reduced motion", () => {
 		const { container } = render(<LinkedDate onValueCommit={onValueCommit} />, {
 			wrapper: harness.wrapper,
 		});
-		fireEvent.keyDown(wheels(container)[0], { key: "ArrowDown" });
+		fireEvent.keyDown(wheels(container)[0], { key: "ArrowUp" });
 		expect(onValueCommit).toHaveBeenLastCalledWith([1, 27]);
 	});
 });
