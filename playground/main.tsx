@@ -1,174 +1,32 @@
-// Development playground for the core. Everything lives in this one file on
-// purpose: it wires the engine to the DOM by hand, without the React adapter.
-import { StrictMode, useEffect, useMemo, useRef, useState } from "react";
+// Development playground for the React adapter, with live engine state.
+import {
+	createContext,
+	StrictMode,
+	useContext,
+	useEffect,
+	useMemo,
+	useState,
+} from "react";
 import { createRoot } from "react-dom/client";
-import { createWheel, type Wheel } from "../src/core";
+import type { Wheel as Engine } from "../src/core";
+import { Detent } from "../src/react";
+import { InternalContext } from "../src/react/context";
 
-const ITEM_HEIGHT = 36;
+// ---------- Engine access for the debug panel ----------
 
-// ---------- DOM wiring ----------
+/** Every live engine, with the element that names it. */
+const registry = new Map<Engine, HTMLElement>();
 
-/** Every live wheel by name, so the debug panel can read them. */
-const registry = new Map<string, Wheel>();
-
-// Starts from the system setting. The debug panel can override it.
-const reducedMotionQuery = window.matchMedia(
-	"(prefers-reduced-motion: reduce)",
-);
-let reducedMotion = reducedMotionQuery.matches;
-
-function setReducedMotion(reduced: boolean) {
-	reducedMotion = reduced;
-	for (const wheel of registry.values()) wheel.setReducedMotion(reduced);
-}
-reducedMotionQuery.addEventListener("change", () =>
-	setReducedMotion(reducedMotionQuery.matches),
-);
-
-interface BindOptions {
-	name: string;
-	items: string[];
-	loop?: boolean;
-	index: number;
-	onChange: (index: number) => void;
-}
-
-/**
- * Attaches a core wheel to an element: creates the rows, forwards input and
- * paints each frame.
- */
-function bindWheel(element: HTMLElement, options: BindOptions) {
-	const { loop = false } = options;
-	let items = options.items;
-
-	const updateAria = (index: number) => {
-		element.setAttribute("aria-valuenow", String(index));
-		element.setAttribute("aria-valuetext", items[index]);
-	};
-
-	const wheel = createWheel({
-		count: items.length,
-		loop,
-		index: options.index,
-		itemHeight: ITEM_HEIGHT,
-		reducedMotion,
-		onIndexChange: (index) => {
-			updateAria(index);
-			options.onChange(index);
-		},
-	});
-
-	const rows = wheel.slots().map(() => {
-		const row = document.createElement("div");
-		row.className = "row";
-		element.append(row);
-		return row;
-	});
-
-	const paint = () => {
-		for (const slot of wheel.slots()) {
-			const row = rows[slot.key];
-			if (!slot.visible) {
-				row.style.visibility = "hidden";
-				continue;
-			}
-			row.style.visibility = "";
-			row.textContent = items[slot.index];
-			row.style.transform = `translateY(${slot.y}px) rotateX(${-slot.angle}rad)`;
-			row.style.opacity = String(slot.opacity);
-			row.classList.toggle("selected", slot.selected);
-		}
-	};
-
-	const onPointerDown = (event: PointerEvent) => {
-		element.setPointerCapture(event.pointerId);
-		wheel.pointerDown(event.clientY);
-	};
-	const onPointerMove = (event: PointerEvent) => {
-		wheel.pointerMove(event.clientY);
-	};
-	const onPointerUp = (event: PointerEvent) => {
-		const rect = element.getBoundingClientRect();
-		wheel.pointerUp(event.clientY - (rect.top + rect.height / 2));
-	};
-	const onPointerCancel = () => wheel.pointerCancel();
-	const onWheel = (event: WheelEvent) => {
-		if (wheel.scroll(event.deltaY, event.deltaMode)) event.preventDefault();
-	};
-	const onKeyDown = (event: KeyboardEvent) => {
-		if (wheel.key(event.key)) event.preventDefault();
-	};
-
-	element.setAttribute("aria-valuemin", "0");
-	element.setAttribute("aria-valuemax", String(items.length - 1));
-	element.addEventListener("pointerdown", onPointerDown);
-	element.addEventListener("pointermove", onPointerMove);
-	element.addEventListener("pointerup", onPointerUp);
-	element.addEventListener("pointercancel", onPointerCancel);
-	element.addEventListener("keydown", onKeyDown);
-	element.addEventListener("wheel", onWheel, { passive: false });
-	registry.set(options.name, wheel);
-	const unsubscribe = wheel.subscribe(paint);
-	updateAria(wheel.index);
-	paint();
-
-	return {
-		wheel,
-		/** Swap the items in place, e.g. when the month changes the days. */
-		setItems(next: string[]) {
-			items = next;
-			element.setAttribute("aria-valuemax", String(items.length - 1));
-			wheel.setCount(items.length);
-			updateAria(wheel.index);
-			paint();
-		},
-		destroy() {
-			unsubscribe();
-			wheel.destroy();
-			element.removeEventListener("pointerdown", onPointerDown);
-			element.removeEventListener("pointermove", onPointerMove);
-			element.removeEventListener("pointerup", onPointerUp);
-			element.removeEventListener("pointercancel", onPointerCancel);
-			element.removeEventListener("keydown", onKeyDown);
-			element.removeEventListener("wheel", onWheel);
-			if (registry.get(options.name) === wheel) registry.delete(options.name);
-			for (const row of rows) row.remove();
-		},
-	};
-}
-
-/** Binds a wheel to a ref for the lifetime of the component. */
-function useWheel(options: BindOptions) {
-	const ref = useRef<HTMLDivElement>(null);
-	const bound = useRef<ReturnType<typeof bindWheel> | null>(null);
-	const latest = useRef(options);
-	latest.current = options;
-	const { items, loop } = options;
-
-	useEffect(() => {
-		if (!ref.current) return;
-		const current = bindWheel(ref.current, {
-			name: latest.current.name,
-			items: latest.current.items,
-			loop,
-			index: latest.current.index,
-			onChange: (index) => latest.current.onChange(index),
-		});
-		bound.current = current;
+const internal = {
+	register(engine: Engine, element: HTMLElement) {
+		registry.set(engine, element);
 		return () => {
-			current.destroy();
-			bound.current = null;
+			registry.delete(engine);
 		};
-	}, [loop]);
+	},
+};
 
-	// New items update the existing wheel rather than rebuilding it, so a
-	// linked wheel keeps its position and any motion in progress.
-	useEffect(() => {
-		bound.current?.setItems(items);
-	}, [items]);
-
-	return { ref, wheel: (): Wheel | undefined => bound.current?.wheel };
-}
+const ReducedMotionContext = createContext(false);
 
 // ---------- Demos ----------
 
@@ -180,30 +38,9 @@ const MINUTES = range(60, 0, 2);
 const PERIODS = ["AM", "PM"];
 
 function TimePicker() {
-	const [hour, setHour] = useState(8);
-	const [minute, setMinute] = useState(41);
-	const [period, setPeriod] = useState(0);
-
-	const hours = useWheel({
-		name: "Hour",
-		items: HOURS,
-		loop: true,
-		index: hour,
-		onChange: setHour,
-	});
-	const minutes = useWheel({
-		name: "Minute",
-		items: MINUTES,
-		loop: true,
-		index: minute,
-		onChange: setMinute,
-	});
-	const periods = useWheel({
-		name: "AM/PM",
-		items: PERIODS,
-		index: period,
-		onChange: setPeriod,
-	});
+	const reducedMotion = useContext(ReducedMotionContext);
+	const [value, setValue] = useState(["9", "41", "AM"]);
+	const [hour, minute, period] = value;
 
 	return (
 		<section className="card">
@@ -213,32 +50,33 @@ function TimePicker() {
 			</header>
 			<div className="stage">
 				<output className="readout">
-					{HOURS[hour]}:{MINUTES[minute]} {PERIODS[period]}
+					{hour}:{minute} {period}
 				</output>
-				<div className="picker">
-					<div className="band" />
-					<div
-						ref={hours.ref}
+				<Detent.Root
+					className="picker"
+					aria-label="Time"
+					value={value}
+					onValueChange={setValue}
+					reducedMotion={reducedMotion}
+				>
+					<Detent.Wheel
 						className="column"
-						role="spinbutton"
-						tabIndex={0}
+						items={HOURS}
+						loop
 						aria-label="Hour"
 					/>
-					<div
-						ref={minutes.ref}
+					<Detent.Wheel
 						className="column"
-						role="spinbutton"
-						tabIndex={0}
+						items={MINUTES}
+						loop
 						aria-label="Minute"
 					/>
-					<div
-						ref={periods.ref}
+					<Detent.Wheel
 						className="column"
-						role="spinbutton"
-						tabIndex={0}
+						items={PERIODS}
 						aria-label="AM or PM"
 					/>
-				</div>
+				</Detent.Root>
 			</div>
 		</section>
 	);
@@ -257,48 +95,24 @@ const MONTHS = [
 	"Oct",
 	"Nov",
 	"Dec",
-];
-const FIRST_YEAR = 1900;
-const YEARS = range(201, FIRST_YEAR);
+].map((label, value) => ({ value, label }));
+const YEARS = Array.from({ length: 201 }, (_, i) => 1900 + i);
 
 const daysIn = (month: number, year: number) =>
 	new Date(year, month + 1, 0).getDate();
 
 function DatePicker() {
-	const today = new Date();
-	const [month, setMonth] = useState(today.getMonth());
-	const [day, setDay] = useState(today.getDate() - 1);
-	const [year, setYear] = useState(today.getFullYear() - FIRST_YEAR);
-
-	const dayCount = daysIn(month, year + FIRST_YEAR);
-	const days = useMemo(() => range(dayCount, 1), [dayCount]);
-
-	const months = useWheel({
-		name: "Month",
-		items: MONTHS,
-		loop: true,
-		index: month,
-		onChange: setMonth,
+	const reducedMotion = useContext(ReducedMotionContext);
+	const [value, setValue] = useState(() => {
+		const today = new Date();
+		return [today.getMonth(), today.getDate(), today.getFullYear()];
 	});
-	const dayWheel = useWheel({
-		name: "Day",
-		items: days,
-		loop: true,
-		index: day,
-		onChange: setDay,
-	});
-	const years = useWheel({
-		name: "Year",
-		items: YEARS,
-		index: year,
-		onChange: setYear,
-	});
+	const [month, day, year] = value;
 
-	// The day wheel catches up a frame later, so clamp for display.
-	const date = new Date(
-		year + FIRST_YEAR,
-		month,
-		Math.min(day, dayCount - 1) + 1,
+	const dayCount = daysIn(month, year);
+	const days = useMemo(
+		() => Array.from({ length: dayCount }, (_, i) => i + 1),
+		[dayCount],
 	);
 
 	return (
@@ -312,37 +126,33 @@ function DatePicker() {
 			</header>
 			<div className="stage">
 				<output className="readout">
-					{date.toLocaleDateString(undefined, {
+					{new Date(year, month, day).toLocaleDateString(undefined, {
 						weekday: "long",
 						day: "numeric",
 						month: "long",
 						year: "numeric",
 					})}
 				</output>
-				<div className="picker">
-					<div className="band" />
-					<div
-						ref={months.ref}
+				<Detent.Root
+					className="picker"
+					aria-label="Date"
+					value={value}
+					onValueChange={setValue}
+					reducedMotion={reducedMotion}
+				>
+					<Detent.Wheel
 						className="column"
-						role="spinbutton"
-						tabIndex={0}
+						items={MONTHS}
+						loop
 						aria-label="Month"
 					/>
-					<div
-						ref={dayWheel.ref}
-						className="column"
-						role="spinbutton"
-						tabIndex={0}
-						aria-label="Day"
-					/>
-					<div
-						ref={years.ref}
+					<Detent.Wheel className="column" items={days} loop aria-label="Day" />
+					<Detent.Wheel
 						className="column wide"
-						role="spinbutton"
-						tabIndex={0}
+						items={YEARS}
 						aria-label="Year"
 					/>
-				</div>
+				</Detent.Root>
 			</div>
 		</section>
 	);
@@ -351,18 +161,11 @@ function DatePicker() {
 const NUMBERS = range(10_000, 0, 4);
 
 function LargeList() {
-	const [value, setValue] = useState(1234);
-	const numbers = useWheel({
-		name: "Number",
-		items: NUMBERS,
-		loop: true,
-		index: value,
-		onChange: setValue,
-	});
+	const reducedMotion = useContext(ReducedMotionContext);
+	const [value, setValue] = useState(["1234"]);
 
 	const jump = () => {
-		const next = Math.floor(Math.random() * NUMBERS.length);
-		numbers.wheel()?.setIndex(next, { animate: true });
+		setValue([NUMBERS[Math.floor(Math.random() * NUMBERS.length)]]);
 	};
 
 	return (
@@ -374,20 +177,85 @@ function LargeList() {
 				</p>
 			</header>
 			<div className="stage">
-				<output className="readout">{NUMBERS[value]}</output>
-				<div className="picker">
-					<div className="band" />
-					<div
-						ref={numbers.ref}
+				<output className="readout">{value[0]}</output>
+				<Detent.Root
+					className="picker"
+					aria-label="Number"
+					value={value}
+					onValueChange={setValue}
+					reducedMotion={reducedMotion}
+				>
+					<Detent.Wheel
 						className="column wider"
-						role="spinbutton"
-						tabIndex={0}
+						items={NUMBERS}
+						loop
 						aria-label="Number"
 					/>
-				</div>
+				</Detent.Root>
 				<button type="button" className="button corner" onClick={jump}>
 					Jump to random
 				</button>
+			</div>
+		</section>
+	);
+}
+
+const COUNTRIES = [
+	{ code: "ar", name: "Argentina", flag: "🇦🇷" },
+	{ code: "br", name: "Brazil", flag: "🇧🇷" },
+	{ code: "ca", name: "Canada", flag: "🇨🇦" },
+	{ code: "de", name: "Germany", flag: "🇩🇪" },
+	{ code: "fr", name: "France", flag: "🇫🇷" },
+	{ code: "in", name: "India", flag: "🇮🇳" },
+	{ code: "jp", name: "Japan", flag: "🇯🇵" },
+	{ code: "ke", name: "Kenya", flag: "🇰🇪" },
+	{ code: "nz", name: "New Zealand", flag: "🇳🇿" },
+	{ code: "us", name: "United States", flag: "🇺🇸" },
+];
+type Country = (typeof COUNTRIES)[number];
+
+const getCode = (country: Country) => country.code;
+const getName = (country: Country) => country.name;
+const renderCountry = (country: Country) => (
+	<>
+		<span className="flag">{country.flag}</span> {country.name}
+	</>
+);
+
+function CustomRows() {
+	const reducedMotion = useContext(ReducedMotionContext);
+	const [value, setValue] = useState(["jp"]);
+	const [committed, setCommitted] = useState(value);
+
+	return (
+		<section className="card">
+			<header>
+				<h2>Custom rows</h2>
+				<p>
+					Rows from renderItem, spoken by name. The readout updates when the
+					wheel comes to rest.
+				</p>
+			</header>
+			<div className="stage">
+				<output className="readout">{committed[0]}</output>
+				<Detent.Root
+					className="picker"
+					aria-label="Country"
+					value={value}
+					onValueChange={setValue}
+					onValueCommit={setCommitted}
+					reducedMotion={reducedMotion}
+				>
+					<Detent.Wheel
+						className="column widest"
+						items={COUNTRIES}
+						getValue={getCode}
+						getLabel={getName}
+						renderItem={renderCountry}
+						loop
+						aria-label="Country"
+					/>
+				</Detent.Root>
 			</div>
 		</section>
 	);
@@ -402,23 +270,27 @@ interface DebugRow {
 	count: number;
 }
 
-function DebugPanel() {
+function DebugPanel({
+	reduced,
+	onReducedChange,
+}: {
+	reduced: boolean;
+	onReducedChange: (reduced: boolean) => void;
+}) {
 	const [rows, setRows] = useState<DebugRow[]>([]);
-	const [reduced, setReduced] = useState(reducedMotion);
 
 	useEffect(() => {
 		let frame = requestAnimationFrame(function read() {
 			setRows(
-				[...registry].map(([name, wheel]) => ({
-					name,
-					position: wheel.position,
-					target: wheel.target,
-					velocity: wheel.velocity,
-					index: wheel.index,
-					count: wheel.count,
+				[...registry].map(([engine, element]) => ({
+					name: element.getAttribute("aria-label") ?? "",
+					position: engine.position,
+					target: engine.target,
+					velocity: engine.velocity,
+					index: engine.index,
+					count: engine.count,
 				})),
 			);
-			setReduced(reducedMotion);
 			frame = requestAnimationFrame(read);
 		});
 		return () => cancelAnimationFrame(frame);
@@ -434,7 +306,7 @@ function DebugPanel() {
 				<input
 					type="checkbox"
 					checked={reduced}
-					onChange={(event) => setReducedMotion(event.target.checked)}
+					onChange={(event) => onReducedChange(event.target.checked)}
 				/>
 				Reduce motion
 			</label>
@@ -515,16 +387,15 @@ main > header p { color: var(--muted); }
 .stage { position: relative; height: 320px; background: var(--stage); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .readout { position: absolute; top: 14px; left: 0; right: 0; text-align: center; font: 12px ui-monospace, Menlo, monospace; color: var(--muted); }
 
-.picker { position: relative; display: flex; gap: 2px; height: 224px; user-select: none; -webkit-user-select: none; }
-.band { position: absolute; left: -10px; right: -10px; top: 50%; height: 38px; margin-top: -19px; background: var(--surface); border-radius: 10px; }
-.column {
-	position: relative; width: 58px; height: 224px; touch-action: none; cursor: grab; perspective: 900px; border-radius: 8px;
-	-webkit-mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent);
-	mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent);
-}
-.column:active { cursor: grabbing; }
+[data-detent-band] { left: -10px; right: -10px; background: var(--surface); }
+[data-detent-item] { color: var(--muted); }
+[data-detent-item][data-selected] { color: var(--fg); }
+.column { flex: none; width: 58px; border-radius: 8px; }
 .column.wide { width: 72px; }
 .column.wider { width: 96px; }
+.column.widest { width: 230px; }
+.flag { font-size: 18px; }
+
 .button { font: inherit; font-size: 12.5px; color: inherit; border: 0; padding: 5px 12px; border-radius: 7px; background: var(--surface); cursor: pointer; }
 .button:hover { background: var(--line); }
 .corner { position: absolute; right: 12px; bottom: 12px; }
@@ -536,32 +407,38 @@ th, td { text-align: right; padding: 6px 8px; border-top: 1px solid var(--line);
 th { color: var(--muted); font-weight: 500; border-top: 0; }
 th:first-child, td:first-child { text-align: left; }
 .spacer { height: 60vh; display: grid; place-items: center; color: var(--muted); font-size: 13px; }
-.row {
-	position: absolute; left: 0; right: 0; top: 50%; height: ${ITEM_HEIGHT}px; margin-top: -${ITEM_HEIGHT / 2}px;
-	line-height: ${ITEM_HEIGHT}px; text-align: center; font-size: 21px; font-variant-numeric: tabular-nums;
-	color: var(--muted); backface-visibility: hidden; white-space: nowrap;
-}
-.row.selected { color: var(--fg); }
 `;
 
+const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
+
 function App() {
+	const [reduced, setReduced] = useState(
+		() => window.matchMedia(REDUCED_MOTION).matches,
+	);
+
 	return (
-		<main>
-			<style>{styles}</style>
-			<header>
-				<h1>detent</h1>
-				<p>Core playground. Each picker below drives the engine directly.</p>
-			</header>
-			<div className="grid">
-				<TimePicker />
-				<DatePicker />
-				<LargeList />
-				<DebugPanel />
-			</div>
-			<p className="spacer">
-				Extra room to check that bounded wheels hand scrolling back to the page.
-			</p>
-		</main>
+		<InternalContext.Provider value={internal}>
+			<ReducedMotionContext.Provider value={reduced}>
+				<main>
+					<style>{styles}</style>
+					<header>
+						<h1>detent</h1>
+						<p>React adapter playground, with live engine state.</p>
+					</header>
+					<div className="grid">
+						<TimePicker />
+						<DatePicker />
+						<LargeList />
+						<CustomRows />
+						<DebugPanel reduced={reduced} onReducedChange={setReduced} />
+					</div>
+					<p className="spacer">
+						Extra room to check that bounded wheels hand scrolling back to the
+						page.
+					</p>
+				</main>
+			</ReducedMotionContext.Provider>
+		</InternalContext.Provider>
 	);
 }
 

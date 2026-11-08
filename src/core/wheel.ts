@@ -148,10 +148,10 @@ const PAGE_ITEMS = 5;
 const SCROLL_OVERSHOOT = 0.3;
 /** Items moved per key press. */
 const KEY_STEPS: Record<string, number> = {
-	ArrowUp: -1,
-	ArrowDown: 1,
-	PageUp: -5,
-	PageDown: 5,
+	ArrowUp: 1,
+	ArrowDown: -1,
+	PageUp: 5,
+	PageDown: -5,
 };
 
 interface ScrollGesture {
