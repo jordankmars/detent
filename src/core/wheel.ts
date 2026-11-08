@@ -58,7 +58,7 @@ export interface Wheel {
 	readonly target: number;
 	/** Current speed in items per second. */
 	readonly velocity: number;
-	/** The selected item, wrapped into `0..count - 1`. */
+	/** The selected item, wrapped into `0..count - 1`, or -1 with no items. */
 	readonly index: number;
 	readonly count: number;
 	readonly loop: boolean;
@@ -180,10 +180,12 @@ export function createWheel(options: WheelOptions): Wheel {
 	let reducedMotion = options.reducedMotion ?? false;
 
 	function normalize(value: number) {
+		if (count === 0) return 0;
 		return loop ? value : clamp(value, 0, count - 1);
 	}
 
 	function indexAt(value: number) {
+		if (count === 0) return -1;
 		const rounded = Math.round(value);
 		return loop ? wrap(rounded, count) : clamp(rounded, 0, count - 1);
 	}
@@ -263,7 +265,7 @@ export function createWheel(options: WheelOptions): Wheel {
 				const item = base - overscan + key;
 				const offset = item - position;
 				const angle = offset * itemAngle;
-				const inRange = loop || (item >= 0 && item < count);
+				const inRange = count > 0 && (loop || (item >= 0 && item < count));
 				const visible = inRange && Math.abs(angle) <= Math.PI / 2;
 				slots.push({
 					key,
@@ -273,13 +275,14 @@ export function createWheel(options: WheelOptions): Wheel {
 					y: radius * Math.sin(angle),
 					opacity: Math.max(0, Math.cos(angle)) ** 1.4,
 					visible,
-					selected: Math.abs(offset) < 0.5,
+					selected: inRange && Math.abs(offset) < 0.5,
 				});
 			}
 			return slots;
 		},
 
 		pointerDown(y, time = scheduler.now()) {
+			if (count === 0) return;
 			drag = { y, start: position, moved: false };
 			tracker.reset();
 			hold(position);
@@ -321,6 +324,7 @@ export function createWheel(options: WheelOptions): Wheel {
 		},
 
 		key(key) {
+			if (count === 0) return false;
 			const step = KEY_STEPS[key];
 			if (step) {
 				// Step from where the wheel is heading, so quick presses add up.
@@ -340,6 +344,7 @@ export function createWheel(options: WheelOptions): Wheel {
 		},
 
 		scroll(deltaY, deltaMode = 0) {
+			if (count === 0) return false;
 			if (drag) return true;
 			const items =
 				deltaMode === 1
@@ -392,11 +397,16 @@ export function createWheel(options: WheelOptions): Wheel {
 
 		setCount(next) {
 			if (next === count) return;
+			if (next === 0) {
+				count = 0;
+				drag = null;
+				return hold(0);
+			}
 			if (loop) {
 				// Re-base the unwrapped position onto the same item in the new range,
 				// otherwise a looping wheel would show a different item. Anything
 				// past the new end shifts onto the last item.
-				const kept = Math.min(index, next - 1);
+				const kept = Math.max(0, Math.min(index, next - 1));
 				const shift = kept - Math.round(position);
 				position += shift;
 				target += shift;
@@ -418,6 +428,7 @@ export function createWheel(options: WheelOptions): Wheel {
 		},
 
 		setIndex(next, { animate = false } = {}) {
+			if (count === 0) return;
 			drag = null;
 			if (!animate) return hold(normalize(next));
 			if (loop) {

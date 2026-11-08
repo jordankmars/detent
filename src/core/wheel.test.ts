@@ -575,6 +575,57 @@ describe("createWheel", () => {
 		});
 	});
 
+	describe("with no items", () => {
+		it("has no selection and shows nothing", () => {
+			for (const loop of [false, true]) {
+				const { wheel } = setup({ count: 0, loop });
+				expect(wheel.index).toBe(-1);
+				expect(wheel.position).toBe(0);
+				for (const slot of wheel.slots()) {
+					expect(slot).toMatchObject({
+						index: -1,
+						visible: false,
+						selected: false,
+					});
+				}
+			}
+		});
+
+		it("ignores input", () => {
+			const t = setup({ count: 0 });
+			expect(t.wheel.key("ArrowDown")).toBe(false);
+			expect(t.wheel.key("End")).toBe(false);
+			expect(t.wheel.scroll(ITEM)).toBe(false);
+			t.wheel.pointerDown(0);
+			expect(t.wheel.dragging).toBe(false);
+			t.wheel.setIndex(3, { animate: true });
+			expect(t.scheduler.pending()).toBe(false);
+			expect(t.wheel.position).toBe(0);
+		});
+
+		it("selects the first item once items arrive", () => {
+			for (const loop of [false, true]) {
+				const t = setup({ count: 0, loop });
+				t.wheel.setCount(12);
+				expect(t.wheel.index).toBe(0);
+				expect(t.changes).toEqual([0]);
+				expect(t.wheel.slots()[5]).toMatchObject({ index: 0, visible: true });
+			}
+		});
+
+		it("stops moving when the items go away", () => {
+			for (const loop of [false, true]) {
+				const t = setup({ index: 3, loop });
+				t.wheel.setIndex(8, { animate: true });
+				t.scheduler.advance(2);
+				t.wheel.setCount(0);
+				expect(t.wheel.index).toBe(-1);
+				expect(t.wheel.position).toBe(0);
+				expect(t.scheduler.pending()).toBe(false);
+			}
+		});
+	});
+
 	it("stops notifying after destroy", () => {
 		const t = setup();
 		let calls = 0;
