@@ -276,6 +276,22 @@ describe("createWheel", () => {
 			expect(t.wheel.velocity).toBe(0);
 		});
 
+		it("never jumps when a trackpad flick mixes small and large deltas", () => {
+			const t = setup({ index: 0, count: 1000, loop: true });
+			const deltas = [10, 20, 40, 80, 120, 90, 60, 40, 25, 15, 8, 4, 2, 1];
+			let before = t.wheel.position;
+			for (const delta of deltas) {
+				t.wheel.scroll(delta);
+				t.scheduler.advance(1, 16);
+				const moved = t.wheel.position - before;
+				expect(moved).toBeCloseTo((delta / ITEM) * 0.6, 5);
+				before = t.wheel.position;
+			}
+			const stopped = t.wheel.position;
+			t.scheduler.flush();
+			expect(Math.abs(t.wheel.position - stopped)).toBeLessThanOrEqual(0.5);
+		});
+
 		it("eases towards coarse mouse wheel notches", () => {
 			const t = setup({ index: 0, count: 60, loop: true });
 			t.wheel.scroll(100);

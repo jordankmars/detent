@@ -146,6 +146,8 @@ const KEY_STEPS: Record<string, number> = {
 
 interface ScrollGesture {
 	owner: "wheel" | "page";
+	/** Follow deltas exactly (trackpad) rather than easing to them (notches). */
+	smooth: boolean;
 	/** Time of the latest event in the gesture, in milliseconds. */
 	last: number;
 }
@@ -351,7 +353,13 @@ export function createWheel(options: WheelOptions): Wheel {
 				const atStart = target <= 0 && items < 0;
 				const atEnd = target >= count - 1 && items > 0;
 				const outward = !loop && (atStart || atEnd);
-				gesture = { owner: outward ? "page" : "wheel", last: now };
+				gesture = {
+					owner: outward ? "page" : "wheel",
+					// Decided once: a hard trackpad flick has large deltas in the middle
+					// and switching paths partway through makes the wheel jump.
+					smooth: deltaMode === 0 && Math.abs(deltaY) < NOTCH_PIXELS,
+					last: now,
+				};
 			}
 			gesture.last = now;
 			if (gesture.owner === "page") return false;
@@ -361,10 +369,7 @@ export function createWheel(options: WheelOptions): Wheel {
 				next = clamp(next, -SCROLL_OVERSHOOT, count - 1 + SCROLL_OVERSHOOT);
 			}
 			cancelScroll();
-			if (
-				reducedMotion ||
-				(deltaMode === 0 && Math.abs(deltaY) < NOTCH_PIXELS)
-			) {
+			if (reducedMotion || gesture.smooth) {
 				// Trackpads send a stream of small deltas, then their own momentum.
 				// Following them exactly means the wheel stops where the fingers
 				// do, instead of a spring carrying it on past.
