@@ -156,6 +156,13 @@ function WheelBody<T>({
 		[binding],
 	);
 
+	const wanted = root.value[slot];
+	// `sync` reads these from `binding.props`, set by the effect above.
+	useIsomorphicLayoutEffect(
+		() => binding.sync(),
+		[binding, model, loop, wanted],
+	);
+
 	const activePointer = useRef<number | null>(null);
 
 	useEffect(() => {

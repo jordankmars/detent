@@ -71,6 +71,8 @@ export interface Binding {
 	paint(): void;
 	/** Runs an input. Returns whether the engine used it. */
 	input(call: () => boolean): boolean;
+	/** Brings the engine in line with the latest props. */
+	sync(): void;
 }
 
 export function createBinding(
@@ -131,6 +133,72 @@ export function createBinding(
 
 	function input(call: () => boolean) {
 		return call();
+	}
+
+	/** Where the wheel will stop, as an item index. */
+	function headingIndex() {
+		const count = binding.props.model.values.length;
+		const rounded = Math.round(engine.target);
+		return engine.loop ? wrap(rounded, count) : clamp(rounded, 0, count - 1);
+	}
+
+	/** Records a wheel's new value and tells the consumer. */
+	function write(index: number) {
+		const { model, root, slot } = binding.props;
+		const value = model.values[index];
+		const latest = root.latest.current;
+		if (Object.is(value, latest[slot])) return;
+		latest[slot] = value;
+		root.change(Array.from(latest));
+	}
+
+	let previousModel: ItemModel | null = null;
+	let foundBefore = false;
+
+	function sync() {
+		const { model, root, slot, loop } = binding.props;
+		const count = model.values.length;
+		const previousCount = previousModel?.values.length ?? 0;
+		const itemsChanged = previousModel !== null && previousModel !== model;
+		previousModel = model;
+		const wanted = root.value[slot];
+		const latest = root.latest.current;
+
+		engine.setCount(count);
+		engine.setLoop(loop);
+
+		if (count === 0) {
+			// Items can arrive later, so hold on to the value until they do.
+			if (wanted !== undefined) latest[slot] = wanted;
+			foundBefore = false;
+		} else {
+			// Checked first so a list with repeats doesn't jump to the first one.
+			const current = currentIndex();
+			const found = Object.is(model.values[current], wanted)
+				? current
+				: model.indexOf(wanted);
+			const heading = headingIndex();
+			if (found === -1) {
+				if (foundBefore && wanted !== undefined) {
+					// The value existed and is now gone, like the 31st in February.
+					write(heading);
+				} else {
+					// Never been a match, so it isn't this wheel's to overwrite.
+					latest[slot] = wanted !== undefined ? wanted : model.values[heading];
+				}
+			} else {
+				latest[slot] = wanted;
+				// An effect cleanup can stop the engine between two items.
+				const stranded = !engine.moving && engine.position !== engine.target;
+				if (found !== heading || stranded) {
+					engine.setIndex(found, {
+						animate: !itemsChanged && previousCount > 0 && !stranded,
+					});
+				}
+			}
+			foundBefore = found !== -1;
+		}
+		paint();
 	}
 
 	/**
@@ -217,6 +285,7 @@ export function createBinding(
 
 		paint,
 		input,
+		sync,
 	};
 
 	return binding;
