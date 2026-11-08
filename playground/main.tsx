@@ -1,6 +1,6 @@
 // Development playground for the core. Everything lives in this one file on
 // purpose: it wires the engine to the DOM by hand, without the React adapter.
-import { StrictMode, useEffect, useRef, useState } from "react";
+import { StrictMode, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { createWheel, type Wheel } from "../src/core";
 
@@ -17,10 +17,11 @@ interface BindOptions {
 
 /**
  * Attaches a core wheel to an element: creates the rows, forwards input and
- * paints each frame. Returns a cleanup function.
+ * paints each frame.
  */
 function bindWheel(element: HTMLElement, options: BindOptions) {
-	const { items, loop = false } = options;
+	const { loop = false } = options;
+	let items = options.items;
 
 	const updateAria = (index: number) => {
 		element.setAttribute("aria-valuenow", String(index));
@@ -93,6 +94,14 @@ function bindWheel(element: HTMLElement, options: BindOptions) {
 
 	return {
 		wheel,
+		/** Swap the items in place, e.g. when the month changes the days. */
+		setItems(next: string[]) {
+			items = next;
+			element.setAttribute("aria-valuemax", String(items.length - 1));
+			wheel.setCount(items.length);
+			updateAria(wheel.index);
+			paint();
+		},
 		destroy() {
 			unsubscribe();
 			wheel.destroy();
@@ -110,27 +119,33 @@ function bindWheel(element: HTMLElement, options: BindOptions) {
 /** Binds a wheel to a ref for the lifetime of the component. */
 function useWheel(options: BindOptions) {
 	const ref = useRef<HTMLDivElement>(null);
-	const wheelRef = useRef<Wheel | null>(null);
+	const bound = useRef<ReturnType<typeof bindWheel> | null>(null);
 	const latest = useRef(options);
 	latest.current = options;
 	const { items, loop } = options;
 
 	useEffect(() => {
 		if (!ref.current) return;
-		const bound = bindWheel(ref.current, {
-			items,
+		const current = bindWheel(ref.current, {
+			items: latest.current.items,
 			loop,
 			index: latest.current.index,
 			onChange: (index) => latest.current.onChange(index),
 		});
-		wheelRef.current = bound.wheel;
+		bound.current = current;
 		return () => {
-			bound.destroy();
-			wheelRef.current = null;
+			current.destroy();
+			bound.current = null;
 		};
-	}, [items, loop]);
+	}, [loop]);
 
-	return { ref, wheel: wheelRef };
+	// New items update the existing wheel rather than rebuilding it, so a
+	// linked wheel keeps its position and any motion in progress.
+	useEffect(() => {
+		bound.current?.setItems(items);
+	}, [items]);
+
+	return { ref, wheel: (): Wheel | undefined => bound.current?.wheel };
 }
 
 // ---------- Demos ----------
@@ -204,6 +219,103 @@ function TimePicker() {
 	);
 }
 
+const MONTHS = [
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
+	"May",
+	"Jun",
+	"Jul",
+	"Aug",
+	"Sep",
+	"Oct",
+	"Nov",
+	"Dec",
+];
+const FIRST_YEAR = 1900;
+const YEARS = range(201, FIRST_YEAR);
+
+const daysIn = (month: number, year: number) =>
+	new Date(year, month + 1, 0).getDate();
+
+function DatePicker() {
+	const today = new Date();
+	const [month, setMonth] = useState(today.getMonth());
+	const [day, setDay] = useState(today.getDate() - 1);
+	const [year, setYear] = useState(today.getFullYear() - FIRST_YEAR);
+
+	const dayCount = daysIn(month, year + FIRST_YEAR);
+	const days = useMemo(() => range(dayCount, 1), [dayCount]);
+
+	const months = useWheel({
+		items: MONTHS,
+		loop: true,
+		index: month,
+		onChange: setMonth,
+	});
+	const dayWheel = useWheel({
+		items: days,
+		loop: true,
+		index: day,
+		onChange: setDay,
+	});
+	const years = useWheel({ items: YEARS, index: year, onChange: setYear });
+
+	// The day wheel catches up a frame later, so clamp for display.
+	const date = new Date(
+		year + FIRST_YEAR,
+		month,
+		Math.min(day, dayCount - 1) + 1,
+	);
+
+	return (
+		<section className="card">
+			<header>
+				<h2>Date</h2>
+				<p>
+					Days follow the month and year. Try the 31st, then February, then a
+					leap year.
+				</p>
+			</header>
+			<div className="stage">
+				<output className="readout">
+					{date.toLocaleDateString(undefined, {
+						weekday: "long",
+						day: "numeric",
+						month: "long",
+						year: "numeric",
+					})}
+				</output>
+				<div className="picker">
+					<div className="band" />
+					<div
+						ref={months.ref}
+						className="column"
+						role="spinbutton"
+						tabIndex={0}
+						aria-label="Month"
+					/>
+					<div
+						ref={dayWheel.ref}
+						className="column"
+						role="spinbutton"
+						tabIndex={0}
+						aria-label="Day"
+					/>
+					<div
+						ref={years.ref}
+						className="column wide"
+						role="spinbutton"
+						tabIndex={0}
+						aria-label="Year"
+					/>
+				</div>
+			</div>
+		</section>
+	);
+}
+
 // ---------- Page ----------
 
 const styles = `
@@ -259,6 +371,7 @@ main > header p { color: var(--muted); }
 	mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent);
 }
 .column:active { cursor: grabbing; }
+.column.wide { width: 72px; }
 .row {
 	position: absolute; left: 0; right: 0; top: 50%; height: ${ITEM_HEIGHT}px; margin-top: -${ITEM_HEIGHT / 2}px;
 	line-height: ${ITEM_HEIGHT}px; text-align: center; font-size: 21px; font-variant-numeric: tabular-nums;
@@ -277,6 +390,7 @@ function App() {
 			</header>
 			<div className="grid">
 				<TimePicker />
+				<DatePicker />
 			</div>
 		</main>
 	);
