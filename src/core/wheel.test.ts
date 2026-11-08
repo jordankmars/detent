@@ -640,6 +640,102 @@ describe("createWheel", () => {
 		expect(t.wheel.position).toBe(6);
 	});
 
+	describe("coming to rest", () => {
+		function resting(options: Partial<WheelOptions> = {}) {
+			const settled: number[] = [];
+			const t = setup({
+				onSettle: (index) => settled.push(index),
+				...options,
+			});
+			return { ...t, settled };
+		}
+
+		it("reports once, after the wheel stops", () => {
+			const t = resting({ index: 0, count: 60, loop: true });
+			drag(t, -ITEM * 3, 64);
+			t.wheel.pointerUp();
+			t.scheduler.advance(3);
+			expect(t.settled).toEqual([]);
+			t.scheduler.flush();
+			expect(t.settled).toEqual([t.wheel.index]);
+		});
+
+		it("is moving during a drag, an animation and a pending snap", () => {
+			const t = resting({ index: 0, count: 60, loop: true });
+			expect(t.wheel.moving).toBe(false);
+			t.wheel.pointerDown(0);
+			expect(t.wheel.moving).toBe(true);
+			t.wheel.pointerCancel();
+			t.scheduler.flush();
+			expect(t.wheel.moving).toBe(false);
+
+			t.wheel.key("ArrowDown");
+			expect(t.wheel.moving).toBe(true);
+			t.scheduler.flush();
+			expect(t.wheel.moving).toBe(false);
+
+			t.wheel.scroll(10);
+			expect(t.wheel.moving).toBe(true);
+			t.scheduler.flush();
+			expect(t.wheel.moving).toBe(false);
+		});
+
+		it("reports straight away with reduced motion", () => {
+			const t = resting({ index: 5, reducedMotion: true });
+			t.wheel.key("ArrowDown");
+			expect(t.settled).toEqual([6]);
+			expect(t.wheel.moving).toBe(false);
+		});
+
+		it("reports the end of an animated setIndex but not a jump", () => {
+			const t = resting({ index: 0 });
+			t.wheel.setIndex(4);
+			expect(t.settled).toEqual([]);
+			t.wheel.setIndex(7, { animate: true });
+			t.scheduler.flush();
+			expect(t.settled).toEqual([7]);
+		});
+
+		it("is no longer moving when it reports", () => {
+			let moving: boolean | undefined;
+			const t = resting({
+				index: 0,
+				onSettle: () => {
+					moving = t.wheel.moving;
+				},
+			});
+			t.wheel.setIndex(3, { animate: true });
+			t.scheduler.flush();
+			expect(moving).toBe(false);
+		});
+
+		it("can send the wheel somewhere new when it stops", () => {
+			let sent = false;
+			const t = resting({
+				index: 0,
+				count: 60,
+				loop: true,
+				onSettle: () => {
+					if (sent) return;
+					sent = true;
+					t.wheel.setIndex(6, { animate: true });
+				},
+			});
+			t.wheel.setIndex(3, { animate: true });
+			t.scheduler.flush();
+			expect(t.wheel.position).toBe(6);
+		});
+
+		it("snaps to an item if reduced motion arrives during a scroll", () => {
+			const t = resting({ index: 0, count: 60, loop: true });
+			t.wheel.scroll(100);
+			t.scheduler.advance(2);
+			t.wheel.setReducedMotion(true);
+			expect(Number.isInteger(t.wheel.position)).toBe(true);
+			expect(t.settled).toEqual([t.wheel.index]);
+		});
+	});
+
 	it("stops notifying after destroy", () => {
 		const t = setup();
 		let calls = 0;

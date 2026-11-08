@@ -47,6 +47,32 @@ describe("createFrameLoop", () => {
 		expect(order).toEqual(["a", "b"]);
 	});
 
+	it("requests one frame when a task re-adds itself mid-frame", () => {
+		const scheduler = createManualScheduler();
+		const original = scheduler.request;
+		let requests = 0;
+		scheduler.request = (callback) => {
+			requests++;
+			return original(callback);
+		};
+		const loop = createFrameLoop(scheduler);
+		let runs = 0;
+		const task = () => {
+			if (++runs === 1) {
+				loop.remove(task);
+				loop.add(task);
+				return true;
+			}
+			return false;
+		};
+		loop.add(task);
+		expect(requests).toBe(1);
+		scheduler.advance();
+		expect(requests).toBe(2);
+		scheduler.flush();
+		expect(runs).toBe(2);
+	});
+
 	it("cancels the frame when the last task is removed", () => {
 		const scheduler = createManualScheduler();
 		const loop = createFrameLoop(scheduler);

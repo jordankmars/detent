@@ -24,6 +24,8 @@ export interface WheelOptions {
 	overscan?: number;
 	/** Called when the item under the center band changes. */
 	onIndexChange?: (index: number) => void;
+	/** Called once the wheel stops moving, with the item it stopped on. */
+	onSettle?: (index: number) => void;
 	/**
 	 * Jump straight to each item instead of animating. Pass the user's
 	 * `prefers-reduced-motion` setting. Dragging still follows the pointer.
@@ -63,6 +65,8 @@ export interface Wheel {
 	readonly count: number;
 	readonly loop: boolean;
 	readonly dragging: boolean;
+	/** True during a drag, an animation, or before a scroll has snapped. */
+	readonly moving: boolean;
 
 	/** Layout for the rows around the current position. */
 	slots(): WheelSlot[];
@@ -205,6 +209,13 @@ export function createWheel(options: WheelOptions): Wheel {
 		position = step.x;
 		velocity = step.v;
 		notify();
+		if (step.done && target === heading) {
+			// Finished first, so `moving` is false inside the callback. It can
+			// start a new animation, which puts the task back.
+			frames.remove(tick);
+			options.onSettle?.(index);
+			return frames.has(tick);
+		}
 		// A listener may have sent the wheel somewhere new during this frame.
 		return !step.done || target !== heading;
 	}
@@ -227,7 +238,11 @@ export function createWheel(options: WheelOptions): Wheel {
 	function settle(to: number, from = 0) {
 		cancelScroll();
 		target = normalize(to);
-		if (reducedMotion) return hold(target);
+		if (reducedMotion) {
+			hold(target);
+			options.onSettle?.(index);
+			return;
+		}
 		velocity = from;
 		frames.add(tick);
 	}
@@ -258,6 +273,9 @@ export function createWheel(options: WheelOptions): Wheel {
 		},
 		get dragging() {
 			return drag !== null;
+		},
+		get moving() {
+			return drag !== null || frames.has(tick) || scrollTimer !== 0;
 		},
 
 		slots() {
@@ -426,7 +444,7 @@ export function createWheel(options: WheelOptions): Wheel {
 
 		setReducedMotion(reduced) {
 			reducedMotion = reduced;
-			if (reduced && frames.has(tick)) hold(target);
+			if (reduced && frames.has(tick)) settle(Math.round(target));
 		},
 
 		setIndex(next, { animate = false } = {}) {

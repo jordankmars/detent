@@ -34,12 +34,14 @@ export function createFrameLoop(scheduler: Scheduler): FrameLoop {
 	let last = 0;
 
 	function tick(now: number) {
+		frame = 0;
 		const dt = Math.max(0, Math.min((now - last) / 1000, MAX_DT));
 		last = now;
 		for (const task of [...tasks]) {
 			if (!task(dt)) tasks.delete(task);
 		}
-		frame = tasks.size ? scheduler.request(tick) : 0;
+		// A task added during this frame has already asked for the next one.
+		if (tasks.size && !frame) frame = scheduler.request(tick);
 	}
 
 	return {
