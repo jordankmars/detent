@@ -65,8 +65,12 @@ export interface Wheel {
 	/** Start a drag at the pointer's vertical position in pixels. */
 	pointerDown(y: number, time?: number): void;
 	pointerMove(y: number, time?: number): void;
-	/** Release the drag and let it coast to the nearest item. */
-	pointerUp(): void;
+	/**
+	 * Release the drag and let it coast to the nearest item. Pass the
+	 * pointer's distance from the wheel's vertical center, in pixels, and a
+	 * press that never moved selects the item under it.
+	 */
+	pointerUp(offsetFromCenter?: number): void;
 	pointerCancel(): void;
 
 	/** Select an item, either jumping there or animating along the shortest path. */
@@ -225,9 +229,16 @@ export function createWheel(options: WheelOptions): Wheel {
 			tracker.add(next, time);
 		},
 
-		pointerUp() {
+		pointerUp(offsetFromCenter) {
 			if (!drag) return;
+			const { moved } = drag;
 			drag = null;
+			if (!moved && offsetFromCenter !== undefined) {
+				// Undo the cylinder projection to find which row was under the pointer.
+				const sine = clamp(offsetFromCenter / radius, -1, 1);
+				const rows = Math.asin(sine) / itemAngle;
+				return settle(Math.round(position + rows), 0);
+			}
 			release();
 		},
 

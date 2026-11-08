@@ -134,6 +134,50 @@ describe("createWheel", () => {
 		expect(t.scheduler.pending()).toBe(false);
 	});
 
+	describe("tapping", () => {
+		it("selects the row below the band", () => {
+			const t = setup({ index: 3 });
+			const below = t.wheel.slots()[7];
+			t.wheel.pointerDown(0);
+			t.wheel.pointerUp(below.y);
+			t.scheduler.flush();
+			expect(t.wheel.index).toBe(5);
+		});
+
+		it("selects the row above the band", () => {
+			const t = setup({ index: 3 });
+			t.wheel.pointerDown(0);
+			t.wheel.pointerUp(t.wheel.slots()[4].y);
+			t.scheduler.flush();
+			expect(t.wheel.index).toBe(2);
+		});
+
+		it("ignores small wobbles during a tap", () => {
+			const t = setup({ index: 3 });
+			t.wheel.pointerDown(0);
+			t.wheel.pointerMove(2);
+			t.wheel.pointerUp(t.wheel.slots()[6].y);
+			t.scheduler.flush();
+			expect(t.wheel.index).toBe(4);
+		});
+
+		it("does not tap after a real drag", () => {
+			const t = setup({ index: 3 });
+			drag(t, -ITEM, 2000);
+			t.wheel.pointerUp(-80);
+			t.scheduler.flush();
+			expect(t.wheel.index).toBe(4);
+		});
+
+		it("does not tap on cancel", () => {
+			const t = setup({ index: 3 });
+			t.wheel.pointerDown(0);
+			t.wheel.pointerCancel();
+			t.scheduler.flush();
+			expect(t.wheel.index).toBe(3);
+		});
+	});
+
 	it("treats a cancelled pointer like a release", () => {
 		const t = setup({ index: 3 });
 		drag(t, -ITEM * 0.8, 2000);
