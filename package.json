@@ -1,9 +1,15 @@
 {
 	"name": "detent",
 	"version": "0.0.0",
-	"description": "",
+	"description": "The iOS scroll-wheel picker for the web, for times, dates or any list.",
 	"keywords": [
-		"react"
+		"react",
+		"picker",
+		"wheel-picker",
+		"time-picker",
+		"date-picker",
+		"scroll-wheel",
+		"ios"
 	],
 	"homepage": "https://github.com/jordankmars/detent#readme",
 	"bugs": {
@@ -30,7 +36,10 @@
 	"scripts": {
 		"build": "tsdown",
 		"dev": "tsdown --watch",
+		"play": "vite playground",
 		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest",
 		"prepack": "pnpm build",
 		"lint": "biome check .",
 		"format": "biome check --write ."
@@ -51,9 +60,14 @@
 		"@arethetypeswrong/core": "^0.18.5",
 		"@biomejs/biome": "2.6.6",
 		"@types/react": "^19.3.0",
+		"@types/react-dom": "^19.3.0",
+		"@vitejs/plugin-react": "^6.2.1",
 		"publint": "^0.3.25",
 		"react": "^19.3.1",
+		"react-dom": "^19.3.1",
 		"tsdown": "^0.23.7",
-		"typescript": "^7.0.2"
+		"typescript": "^7.0.2",
+		"vite": "^8.3.6",
+		"vitest": "^5.1.0"
 	}
 }
