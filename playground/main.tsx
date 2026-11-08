@@ -8,11 +8,25 @@ const ITEM_HEIGHT = 36;
 
 // ---------- DOM wiring ----------
 
+/** Every live wheel by name, so the debug panel can read them. */
+const registry = new Map<string, Wheel>();
+
+// Starts from the system setting. The debug panel can override it.
 const reducedMotionQuery = window.matchMedia(
 	"(prefers-reduced-motion: reduce)",
 );
+let reducedMotion = reducedMotionQuery.matches;
+
+function setReducedMotion(reduced: boolean) {
+	reducedMotion = reduced;
+	for (const wheel of registry.values()) wheel.setReducedMotion(reduced);
+}
+reducedMotionQuery.addEventListener("change", () =>
+	setReducedMotion(reducedMotionQuery.matches),
+);
 
 interface BindOptions {
+	name: string;
 	items: string[];
 	loop?: boolean;
 	index: number;
@@ -37,7 +51,7 @@ function bindWheel(element: HTMLElement, options: BindOptions) {
 		loop,
 		index: options.index,
 		itemHeight: ITEM_HEIGHT,
-		reducedMotion: reducedMotionQuery.matches,
+		reducedMotion,
 		onIndexChange: (index) => {
 			updateAria(index);
 			options.onChange(index);
@@ -81,8 +95,6 @@ function bindWheel(element: HTMLElement, options: BindOptions) {
 	const onWheel = (event: WheelEvent) => {
 		if (wheel.scroll(event.deltaY, event.deltaMode)) event.preventDefault();
 	};
-	const onMotionChange = () =>
-		wheel.setReducedMotion(reducedMotionQuery.matches);
 	const onKeyDown = (event: KeyboardEvent) => {
 		if (wheel.key(event.key)) event.preventDefault();
 	};
@@ -95,7 +107,7 @@ function bindWheel(element: HTMLElement, options: BindOptions) {
 	element.addEventListener("pointercancel", onPointerCancel);
 	element.addEventListener("keydown", onKeyDown);
 	element.addEventListener("wheel", onWheel, { passive: false });
-	reducedMotionQuery.addEventListener("change", onMotionChange);
+	registry.set(options.name, wheel);
 	const unsubscribe = wheel.subscribe(paint);
 	updateAria(wheel.index);
 	paint();
@@ -119,7 +131,7 @@ function bindWheel(element: HTMLElement, options: BindOptions) {
 			element.removeEventListener("pointercancel", onPointerCancel);
 			element.removeEventListener("keydown", onKeyDown);
 			element.removeEventListener("wheel", onWheel);
-			reducedMotionQuery.removeEventListener("change", onMotionChange);
+			if (registry.get(options.name) === wheel) registry.delete(options.name);
 			for (const row of rows) row.remove();
 		},
 	};
@@ -136,6 +148,7 @@ function useWheel(options: BindOptions) {
 	useEffect(() => {
 		if (!ref.current) return;
 		const current = bindWheel(ref.current, {
+			name: latest.current.name,
 			items: latest.current.items,
 			loop,
 			index: latest.current.index,
@@ -172,18 +185,21 @@ function TimePicker() {
 	const [period, setPeriod] = useState(0);
 
 	const hours = useWheel({
+		name: "Hour",
 		items: HOURS,
 		loop: true,
 		index: hour,
 		onChange: setHour,
 	});
 	const minutes = useWheel({
+		name: "Minute",
 		items: MINUTES,
 		loop: true,
 		index: minute,
 		onChange: setMinute,
 	});
 	const periods = useWheel({
+		name: "AM/PM",
 		items: PERIODS,
 		index: period,
 		onChange: setPeriod,
@@ -258,18 +274,25 @@ function DatePicker() {
 	const days = useMemo(() => range(dayCount, 1), [dayCount]);
 
 	const months = useWheel({
+		name: "Month",
 		items: MONTHS,
 		loop: true,
 		index: month,
 		onChange: setMonth,
 	});
 	const dayWheel = useWheel({
+		name: "Day",
 		items: days,
 		loop: true,
 		index: day,
 		onChange: setDay,
 	});
-	const years = useWheel({ items: YEARS, index: year, onChange: setYear });
+	const years = useWheel({
+		name: "Year",
+		items: YEARS,
+		index: year,
+		onChange: setYear,
+	});
 
 	// The day wheel catches up a frame later, so clamp for display.
 	const date = new Date(
@@ -320,6 +343,126 @@ function DatePicker() {
 						aria-label="Year"
 					/>
 				</div>
+			</div>
+		</section>
+	);
+}
+
+const NUMBERS = range(10_000, 0, 4);
+
+function LargeList() {
+	const [value, setValue] = useState(1234);
+	const numbers = useWheel({
+		name: "Number",
+		items: NUMBERS,
+		loop: true,
+		index: value,
+		onChange: setValue,
+	});
+
+	const jump = () => {
+		const next = Math.floor(Math.random() * NUMBERS.length);
+		numbers.wheel()?.setIndex(next, { animate: true });
+	};
+
+	return (
+		<section className="card">
+			<header>
+				<h2>Large list</h2>
+				<p>
+					Ten thousand looping values. Only eleven rows are ever in the DOM.
+				</p>
+			</header>
+			<div className="stage">
+				<output className="readout">{NUMBERS[value]}</output>
+				<div className="picker">
+					<div className="band" />
+					<div
+						ref={numbers.ref}
+						className="column wider"
+						role="spinbutton"
+						tabIndex={0}
+						aria-label="Number"
+					/>
+				</div>
+				<button type="button" className="button corner" onClick={jump}>
+					Jump to random
+				</button>
+			</div>
+		</section>
+	);
+}
+
+interface DebugRow {
+	name: string;
+	position: number;
+	target: number;
+	velocity: number;
+	index: number;
+	count: number;
+}
+
+function DebugPanel() {
+	const [rows, setRows] = useState<DebugRow[]>([]);
+	const [reduced, setReduced] = useState(reducedMotion);
+
+	useEffect(() => {
+		let frame = requestAnimationFrame(function read() {
+			setRows(
+				[...registry].map(([name, wheel]) => ({
+					name,
+					position: wheel.position,
+					target: wheel.target,
+					velocity: wheel.velocity,
+					index: wheel.index,
+					count: wheel.count,
+				})),
+			);
+			setReduced(reducedMotion);
+			frame = requestAnimationFrame(read);
+		});
+		return () => cancelAnimationFrame(frame);
+	}, []);
+
+	return (
+		<section className="card">
+			<header>
+				<h2>Engine state</h2>
+				<p>Live values from every wheel on the page, in items.</p>
+			</header>
+			<label className="toggle">
+				<input
+					type="checkbox"
+					checked={reduced}
+					onChange={(event) => setReducedMotion(event.target.checked)}
+				/>
+				Reduce motion
+			</label>
+			<div className="table">
+				<table>
+					<thead>
+						<tr>
+							<th>Wheel</th>
+							<th>Position</th>
+							<th>Target</th>
+							<th>Velocity</th>
+							<th>Index</th>
+						</tr>
+					</thead>
+					<tbody>
+						{rows.map((row) => (
+							<tr key={row.name}>
+								<td>{row.name}</td>
+								<td>{row.position.toFixed(3)}</td>
+								<td>{row.target.toFixed(3)}</td>
+								<td>{row.velocity.toFixed(2)}</td>
+								<td>
+									{row.index} / {row.count}
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
 			</div>
 		</section>
 	);
@@ -381,6 +524,18 @@ main > header p { color: var(--muted); }
 }
 .column:active { cursor: grabbing; }
 .column.wide { width: 72px; }
+.column.wider { width: 96px; }
+.button { font: inherit; font-size: 12.5px; color: inherit; border: 0; padding: 5px 12px; border-radius: 7px; background: var(--surface); cursor: pointer; }
+.button:hover { background: var(--line); }
+.corner { position: absolute; right: 12px; bottom: 12px; }
+.toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.toggle input { accent-color: var(--accent); }
+.table { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font: 12px ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 6px 8px; border-top: 1px solid var(--line); white-space: nowrap; }
+th { color: var(--muted); font-weight: 500; border-top: 0; }
+th:first-child, td:first-child { text-align: left; }
+.spacer { height: 60vh; display: grid; place-items: center; color: var(--muted); font-size: 13px; }
 .row {
 	position: absolute; left: 0; right: 0; top: 50%; height: ${ITEM_HEIGHT}px; margin-top: -${ITEM_HEIGHT / 2}px;
 	line-height: ${ITEM_HEIGHT}px; text-align: center; font-size: 21px; font-variant-numeric: tabular-nums;
@@ -400,7 +555,12 @@ function App() {
 			<div className="grid">
 				<TimePicker />
 				<DatePicker />
+				<LargeList />
+				<DebugPanel />
 			</div>
+			<p className="spacer">
+				Extra room to check that bounded wheels hand scrolling back to the page.
+			</p>
 		</main>
 	);
 }
