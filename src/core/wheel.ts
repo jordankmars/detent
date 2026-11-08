@@ -200,11 +200,13 @@ export function createWheel(options: WheelOptions): Wheel {
 	}
 
 	function tick(dt: number) {
-		const step = stepSpring(position, velocity, target, SPRING, dt);
+		const heading = target;
+		const step = stepSpring(position, velocity, heading, SPRING, dt);
 		position = step.x;
 		velocity = step.v;
 		notify();
-		return !step.done;
+		// A listener may have sent the wheel somewhere new during this frame.
+		return !step.done || target !== heading;
 	}
 
 	function cancelScroll() {

@@ -626,6 +626,20 @@ describe("createWheel", () => {
 		});
 	});
 
+	it("keeps animating when a listener retargets on the last frame", () => {
+		const t = setup({ index: 0, count: 60, loop: true });
+		let retargeted = false;
+		t.wheel.subscribe(() => {
+			if (!retargeted && t.wheel.position === 3) {
+				retargeted = true;
+				t.wheel.setIndex(6, { animate: true });
+			}
+		});
+		t.wheel.setIndex(3, { animate: true });
+		t.scheduler.flush();
+		expect(t.wheel.position).toBe(6);
+	});
+
 	it("stops notifying after destroy", () => {
 		const t = setup();
 		let calls = 0;
