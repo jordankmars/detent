@@ -110,7 +110,10 @@ export interface Wheel {
 	/** Turn animation off or back on, e.g. when the user's preference changes. */
 	setReducedMotion(reduced: boolean): void;
 
-	/** Select an item, either jumping there or animating along the shortest path. */
+	/**
+	 * Select an item, either jumping there or animating along the shortest
+	 * path. Ignored during a drag, so the user's finger always wins.
+	 */
 	setIndex(index: number, options?: { animate?: boolean }): void;
 
 	/** Called whenever the position changes, including every animation frame. */
@@ -448,8 +451,7 @@ export function createWheel(options: WheelOptions): Wheel {
 		},
 
 		setIndex(next, { animate = false } = {}) {
-			if (count === 0) return;
-			drag = null;
+			if (count === 0 || drag) return;
 			if (!animate) return hold(normalize(next));
 			if (loop) {
 				// Take the short way round rather than spinning past every item.

@@ -566,6 +566,17 @@ describe("createWheel", () => {
 			expect(t.wheel.position).toBe(7);
 		});
 
+		it("leaves a drag in progress alone", () => {
+			const t = setup({ index: 5 });
+			t.wheel.pointerDown(0);
+			t.wheel.pointerMove(-ITEM);
+			t.wheel.setIndex(2);
+			expect(t.wheel.dragging).toBe(true);
+			expect(t.wheel.position).toBe(6);
+			t.wheel.pointerMove(-ITEM * 2);
+			expect(t.wheel.position).toBe(7);
+		});
+
 		it("takes the short way round when looping", () => {
 			const t = setup({ index: 1, loop: true });
 			t.wheel.setIndex(11, { animate: true });
