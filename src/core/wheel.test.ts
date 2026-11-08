@@ -269,6 +269,40 @@ describe("createWheel", () => {
 			expect(t.wheel.position).toBe(5);
 		});
 
+		it("follows trackpad deltas exactly", () => {
+			const t = setup({ index: 0, count: 60, loop: true });
+			t.wheel.scroll(30);
+			expect(t.wheel.position).toBeCloseTo((30 / ITEM) * 0.6);
+			expect(t.wheel.velocity).toBe(0);
+		});
+
+		it("eases towards coarse mouse wheel notches", () => {
+			const t = setup({ index: 0, count: 60, loop: true });
+			t.wheel.scroll(100);
+			expect(t.wheel.position).toBe(0);
+			t.scheduler.advance();
+			expect(t.wheel.position).toBeGreaterThan(0);
+		});
+
+		it("stops within half an item of where a trackpad flick ends", () => {
+			const t = setup({ index: 0, count: 1000, loop: true });
+			// A flick, then the trackpad's own momentum dying away.
+			let delta = 45;
+			while (delta > 0.5) {
+				t.wheel.scroll(delta);
+				t.scheduler.advance(1, 16);
+				delta *= 0.92;
+			}
+			const stopped = t.wheel.position;
+			const trace: number[] = [];
+			t.wheel.subscribe(() => trace.push(t.wheel.position));
+			t.scheduler.flush();
+			expect(Math.abs(t.wheel.position - stopped)).toBeLessThanOrEqual(0.5);
+			expect(Math.max(...trace)).toBeLessThanOrEqual(
+				Math.max(stopped, t.wheel.position),
+			);
+		});
+
 		it("waits for the scroll to stop before snapping", () => {
 			const t = setup({ index: 0, count: 60, loop: true });
 			t.wheel.scroll(ITEM * 0.5);

@@ -119,6 +119,11 @@ const PROJECTION = 0.2;
 const SCROLL_SCALE = 0.6;
 /** Milliseconds without a scroll event before snapping to an item. */
 const SCROLL_IDLE = 120;
+/**
+ * Pixel deltas below this come from a trackpad or a smooth-scrolling mouse.
+ * Larger ones are coarse mouse wheel notches.
+ */
+const NOTCH_PIXELS = 50;
 /** Items in one "page" when the browser reports scroll by pages. */
 const PAGE_ITEMS = 5;
 /** How far, in items, scrolling may push past the ends before it stops. */
@@ -345,10 +350,21 @@ export function createWheel(options: WheelOptions): Wheel {
 			if (!loop) {
 				next = clamp(next, -SCROLL_OVERSHOOT, count - 1 + SCROLL_OVERSHOOT);
 			}
-			// Follow the scroll loosely, then snap once it goes quiet.
 			cancelScroll();
-			target = next;
-			frames.add(tick);
+			if (deltaMode === 0 && Math.abs(deltaY) < NOTCH_PIXELS) {
+				// Trackpads send a stream of small deltas, then their own momentum.
+				// Following them exactly means the wheel stops where the fingers
+				// do, instead of a spring carrying it on past.
+				frames.remove(tick);
+				position = target = next;
+				velocity = 0;
+				notify();
+			} else {
+				// Notches are coarse, so ease towards them.
+				target = next;
+				frames.add(tick);
+			}
+			// Snap to an item once the scroll goes quiet.
 			scrollTimer = scheduler.setTimeout(() => {
 				scrollTimer = 0;
 				settle(Math.round(target));
