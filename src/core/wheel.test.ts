@@ -256,6 +256,68 @@ describe("createWheel", () => {
 		});
 	});
 
+	describe("scrolling", () => {
+		it("moves with pixel deltas and snaps once it goes quiet", () => {
+			const t = setup({ index: 2, count: 60, loop: true });
+			for (let i = 0; i < 5; i++) {
+				expect(t.wheel.scroll(ITEM)).toBe(true);
+				t.scheduler.advance(1, 16);
+			}
+			// 5 deltas of one item, scaled down to 0.6 each.
+			expect(t.wheel.target).toBeCloseTo(5);
+			t.scheduler.flush();
+			expect(t.wheel.position).toBe(5);
+		});
+
+		it("waits for the scroll to stop before snapping", () => {
+			const t = setup({ index: 0, count: 60, loop: true });
+			t.wheel.scroll(ITEM * 0.5);
+			t.scheduler.advance(5, 20);
+			expect(t.wheel.target).toBeCloseTo(0.3);
+			t.scheduler.advance(2, 20);
+			expect(t.wheel.target).toBe(0);
+		});
+
+		it("treats line deltas as whole items", () => {
+			const t = setup({ index: 0, count: 60, loop: true });
+			t.wheel.scroll(5, 1);
+			t.scheduler.flush();
+			expect(t.wheel.position).toBe(3);
+		});
+
+		it("treats page deltas as several items", () => {
+			const t = setup({ index: 0, count: 60, loop: true });
+			t.wheel.scroll(1, 2);
+			t.scheduler.flush();
+			expect(t.wheel.position).toBe(3);
+		});
+
+		it("scrolls backwards with negative deltas", () => {
+			const t = setup({ index: 0, loop: true });
+			t.wheel.scroll(-ITEM * 4);
+			t.scheduler.flush();
+			expect(t.wheel.index).toBe(10);
+		});
+
+		it("only overshoots the ends slightly", () => {
+			const t = setup({ index: 10 });
+			t.wheel.scroll(ITEM * 20);
+			expect(t.wheel.target).toBeCloseTo(11.3);
+			t.scheduler.flush();
+			expect(t.wheel.position).toBe(11);
+		});
+
+		it("is interrupted by a pointer press", () => {
+			const t = setup({ index: 0, count: 60, loop: true });
+			t.wheel.scroll(ITEM * 3);
+			t.scheduler.advance(2);
+			t.wheel.pointerDown(0);
+			const held = t.wheel.position;
+			t.scheduler.flush();
+			expect(t.wheel.position).toBe(held);
+		});
+	});
+
 	describe("setIndex", () => {
 		it("jumps without animating by default", () => {
 			const t = setup();

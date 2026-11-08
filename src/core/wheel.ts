@@ -79,6 +79,13 @@ export interface Wheel {
 	 */
 	key(key: string): boolean;
 
+	/**
+	 * Handle a wheel or trackpad scroll. Pass the event's `deltaY` and
+	 * `deltaMode`. Returns true when the wheel used the scroll, so the caller
+	 * knows to prevent the page from scrolling.
+	 */
+	scroll(deltaY: number, deltaMode?: number): boolean;
+
 	/** Select an item, either jumping there or animating along the shortest path. */
 	setIndex(index: number, options?: { animate?: boolean }): void;
 
@@ -96,6 +103,14 @@ const STRETCH = 1.5;
 const MAX_VELOCITY = 40;
 /** Seconds of coasting used to project where a flick would end up. */
 const PROJECTION = 0.2;
+/** Fraction of each scroll delta applied, so the wheel doesn't feel twitchy. */
+const SCROLL_SCALE = 0.6;
+/** Milliseconds without a scroll event before snapping to an item. */
+const SCROLL_IDLE = 120;
+/** Items in one "page" when the browser reports scroll by pages. */
+const PAGE_ITEMS = 5;
+/** How far, in items, scrolling may push past the ends before it stops. */
+const SCROLL_OVERSHOOT = 0.3;
 /** Items moved per key press. */
 const KEY_STEPS: Record<string, number> = {
 	ArrowUp: -1,
@@ -127,6 +142,7 @@ export function createWheel(options: WheelOptions): Wheel {
 	let velocity = 0;
 	let index = indexAt(position);
 	let drag: Drag | null = null;
+	let scrollTimer = 0;
 
 	function normalize(value: number) {
 		return loop ? value : clamp(value, 0, count - 1);
@@ -154,8 +170,14 @@ export function createWheel(options: WheelOptions): Wheel {
 		return !step.done;
 	}
 
+	function cancelScroll() {
+		if (scrollTimer) scheduler.clearTimeout(scrollTimer);
+		scrollTimer = 0;
+	}
+
 	/** Pin the wheel in place, stopping any animation. */
 	function hold(value: number) {
+		cancelScroll();
 		frames.remove(tick);
 		position = target = value;
 		velocity = 0;
@@ -164,6 +186,7 @@ export function createWheel(options: WheelOptions): Wheel {
 
 	/** Animate to a target, optionally starting with some velocity. */
 	function settle(to: number, from = 0) {
+		cancelScroll();
 		target = normalize(to);
 		velocity = from;
 		frames.add(tick);
@@ -280,6 +303,30 @@ export function createWheel(options: WheelOptions): Wheel {
 			return false;
 		},
 
+		scroll(deltaY, deltaMode = 0) {
+			if (drag) return true;
+			const items =
+				deltaMode === 1
+					? deltaY
+					: deltaMode === 2
+						? deltaY * PAGE_ITEMS
+						: deltaY / itemHeight;
+
+			let next = target + items * SCROLL_SCALE;
+			if (!loop) {
+				next = clamp(next, -SCROLL_OVERSHOOT, count - 1 + SCROLL_OVERSHOOT);
+			}
+			// Follow the scroll loosely, then snap once it goes quiet.
+			cancelScroll();
+			target = next;
+			frames.add(tick);
+			scrollTimer = scheduler.setTimeout(() => {
+				scrollTimer = 0;
+				settle(Math.round(target));
+			}, SCROLL_IDLE);
+			return true;
+		},
+
 		setIndex(next, { animate = false } = {}) {
 			drag = null;
 			if (!animate) return hold(normalize(next));
@@ -297,6 +344,7 @@ export function createWheel(options: WheelOptions): Wheel {
 		},
 
 		destroy() {
+			cancelScroll();
 			frames.remove(tick);
 			listeners.clear();
 			drag = null;

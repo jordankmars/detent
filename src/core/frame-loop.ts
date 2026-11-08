@@ -3,6 +3,8 @@ export interface Scheduler {
 	now(): number;
 	request(callback: (time: number) => void): number;
 	cancel(id: number): void;
+	setTimeout(callback: () => void, ms: number): number;
+	clearTimeout(id: number): void;
 }
 
 /** Called once per frame with the elapsed seconds. Return false when done. */
@@ -22,6 +24,8 @@ export const browserScheduler: Scheduler = {
 	now: () => performance.now(),
 	request: (callback) => requestAnimationFrame(callback),
 	cancel: (id) => cancelAnimationFrame(id),
+	setTimeout: (callback, ms) => window.setTimeout(callback, ms),
+	clearTimeout: (id) => window.clearTimeout(id),
 };
 
 export function createFrameLoop(scheduler: Scheduler): FrameLoop {
