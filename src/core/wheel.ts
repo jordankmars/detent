@@ -107,6 +107,9 @@ export interface Wheel {
 	 */
 	setCount(count: number): void;
 
+	/** Turn looping on or off, keeping the selected item. */
+	setLoop(loop: boolean): void;
+
 	/** Turn animation off or back on, e.g. when the user's preference changes. */
 	setReducedMotion(reduced: boolean): void;
 
@@ -174,7 +177,7 @@ export function createWheel(options: WheelOptions): Wheel {
 	const radius = options.radius ?? 100;
 	const itemAngle = ((options.itemAngle ?? 21) * Math.PI) / 180;
 	const overscan = options.overscan ?? 5;
-	const loop = options.loop ?? false;
+	let loop = options.loop ?? false;
 	let count = options.count;
 
 	let position = normalize(options.index ?? 0);
@@ -440,6 +443,24 @@ export function createWheel(options: WheelOptions): Wheel {
 			count = next;
 			if (target > count - 1 && !drag) {
 				settle(count - 1, velocity);
+			} else {
+				notify();
+			}
+		},
+
+		setLoop(next) {
+			if (next === loop) return;
+			if (!next && count > 0) {
+				// A looping position can be any number, so move it back into the
+				// range a bounded wheel expects.
+				const shift = index - Math.round(position);
+				position += shift;
+				target += shift;
+				if (drag) drag.start += shift;
+			}
+			loop = next;
+			if (!drag && target !== normalize(target)) {
+				settle(normalize(target), velocity);
 			} else {
 				notify();
 			}

@@ -548,6 +548,60 @@ describe("createWheel", () => {
 		});
 	});
 
+	describe("setLoop", () => {
+		it("keeps the selected item when turning looping off", () => {
+			const t = setup({ index: 0, count: 12, loop: true });
+			t.wheel.setIndex(40);
+			expect(t.wheel.index).toBe(4);
+			t.wheel.setLoop(false);
+			expect(t.wheel.loop).toBe(false);
+			expect(t.wheel.position).toBe(4);
+			expect(t.wheel.index).toBe(4);
+			expect(t.scheduler.pending()).toBe(false);
+		});
+
+		it("keeps the selected item when turning looping on", () => {
+			const t = setup({ index: 11 });
+			t.wheel.setLoop(true);
+			expect(t.wheel.index).toBe(11);
+			expect(t.wheel.slots()[6]).toMatchObject({ index: 0, visible: true });
+		});
+
+		it("stops rows wrapping once looping is off", () => {
+			const t = setup({ index: 0, loop: true });
+			t.wheel.setLoop(false);
+			expect(t.wheel.slots()[4]).toMatchObject({ index: -1, visible: false });
+		});
+
+		it("brings a moving wheel back inside the ends", () => {
+			const t = setup({ index: 11, loop: true });
+			t.wheel.setIndex(1, { animate: true });
+			t.scheduler.advance(2);
+			t.wheel.setLoop(false);
+			expect(t.wheel.target).toBe(11);
+			t.scheduler.flush();
+			expect(t.wheel.position).toBe(11);
+		});
+
+		it("carries a drag across the change", () => {
+			const t = setup({ index: 0, loop: true });
+			t.wheel.setIndex(16);
+			t.wheel.pointerDown(0);
+			t.wheel.setLoop(false);
+			expect(t.wheel.position).toBe(4);
+			t.wheel.pointerMove(-ITEM);
+			expect(t.wheel.position).toBe(5);
+		});
+
+		it("does nothing when unchanged", () => {
+			const t = setup({ index: 3, loop: true });
+			let calls = 0;
+			t.wheel.subscribe(() => calls++);
+			t.wheel.setLoop(true);
+			expect(calls).toBe(0);
+		});
+	});
+
 	describe("setIndex", () => {
 		it("jumps without animating by default", () => {
 			const t = setup();
