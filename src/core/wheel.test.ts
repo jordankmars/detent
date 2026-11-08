@@ -318,6 +318,56 @@ describe("createWheel", () => {
 		});
 	});
 
+	describe("sharing scroll with the page", () => {
+		it("lets the page scroll when a bounded wheel is already at the end", () => {
+			const t = setup({ index: 11 });
+			expect(t.wheel.scroll(ITEM)).toBe(false);
+			expect(t.wheel.target).toBe(11);
+		});
+
+		it("lets the page scroll when a bounded wheel is already at the start", () => {
+			const t = setup({ index: 0 });
+			expect(t.wheel.scroll(-ITEM)).toBe(false);
+		});
+
+		it("still scrolls inwards from an end", () => {
+			const t = setup({ index: 0 });
+			expect(t.wheel.scroll(ITEM)).toBe(true);
+		});
+
+		it("always uses the scroll when looping", () => {
+			const t = setup({ index: 0, loop: true });
+			expect(t.wheel.scroll(-ITEM)).toBe(true);
+		});
+
+		it("keeps a gesture that reaches the end on the wheel", () => {
+			const t = setup({ index: 9 });
+			for (let i = 0; i < 10; i++) {
+				expect(t.wheel.scroll(ITEM)).toBe(true);
+				t.scheduler.advance(1, 16);
+			}
+			t.scheduler.flush();
+			expect(t.wheel.position).toBe(11);
+		});
+
+		it("keeps a gesture that went to the page on the page", () => {
+			const t = setup({ index: 11 });
+			expect(t.wheel.scroll(ITEM)).toBe(false);
+			t.scheduler.wait(16);
+			// Reversing mid-gesture doesn't grab it back.
+			expect(t.wheel.scroll(-ITEM)).toBe(false);
+			t.scheduler.wait(16);
+			expect(t.wheel.scroll(-ITEM)).toBe(false);
+		});
+
+		it("starts a new gesture after a pause", () => {
+			const t = setup({ index: 11 });
+			expect(t.wheel.scroll(ITEM)).toBe(false);
+			t.scheduler.wait(200);
+			expect(t.wheel.scroll(-ITEM)).toBe(true);
+		});
+	});
+
 	describe("setCount", () => {
 		it("keeps the selected item when it still exists", () => {
 			const t = setup({ index: 14, count: 31 });

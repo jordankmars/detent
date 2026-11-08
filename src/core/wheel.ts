@@ -83,6 +83,10 @@ export interface Wheel {
 	 * Handle a wheel or trackpad scroll. Pass the event's `deltaY` and
 	 * `deltaMode`. Returns true when the wheel used the scroll, so the caller
 	 * knows to prevent the page from scrolling.
+	 *
+	 * A scroll that starts by pushing a bounded wheel past its end goes to the
+	 * page instead. Once a scroll gesture picks the wheel or the page, it stays
+	 * there until it pauses, so it never switches halfway through.
 	 */
 	scroll(deltaY: number, deltaMode?: number): boolean;
 
@@ -127,6 +131,12 @@ const KEY_STEPS: Record<string, number> = {
 	PageDown: 5,
 };
 
+interface ScrollGesture {
+	owner: "wheel" | "page";
+	/** Time of the latest event in the gesture, in milliseconds. */
+	last: number;
+}
+
 interface Drag {
 	y: number;
 	start: number;
@@ -151,6 +161,7 @@ export function createWheel(options: WheelOptions): Wheel {
 	let index = indexAt(position);
 	let drag: Drag | null = null;
 	let scrollTimer = 0;
+	let gesture: ScrollGesture | null = null;
 
 	function normalize(value: number) {
 		return loop ? value : clamp(value, 0, count - 1);
@@ -319,6 +330,16 @@ export function createWheel(options: WheelOptions): Wheel {
 					: deltaMode === 2
 						? deltaY * PAGE_ITEMS
 						: deltaY / itemHeight;
+
+			const now = scheduler.now();
+			if (!gesture || now - gesture.last >= SCROLL_IDLE) {
+				const atStart = target <= 0 && items < 0;
+				const atEnd = target >= count - 1 && items > 0;
+				const outward = !loop && (atStart || atEnd);
+				gesture = { owner: outward ? "page" : "wheel", last: now };
+			}
+			gesture.last = now;
+			if (gesture.owner === "page") return false;
 
 			let next = target + items * SCROLL_SCALE;
 			if (!loop) {
