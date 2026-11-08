@@ -16,10 +16,34 @@ export interface WheelOptions {
 	index?: number;
 	/** Height of one item in pixels. Converts pointer movement into items. */
 	itemHeight?: number;
+	/** Radius of the cylinder the items sit on, in pixels. */
+	radius?: number;
+	/** Degrees of the cylinder each item takes up. */
+	itemAngle?: number;
+	/** Items rendered either side of the selected one. */
+	overscan?: number;
 	/** Called when the item under the center band changes. */
 	onIndexChange?: (index: number) => void;
 	/** Clock and frame source. Defaults to requestAnimationFrame. */
 	scheduler?: Scheduler;
+}
+
+/** One rendered row of the cylinder. */
+export interface WheelSlot {
+	/** Stable per row, so a renderer can reuse the same node every frame. */
+	key: number;
+	/** Item shown in this row, or -1 past the ends of a non-looping wheel. */
+	index: number;
+	/** Distance from the center band, in items. */
+	offset: number;
+	/** Rotation around the cylinder's axis, in radians. */
+	angle: number;
+	/** Vertical offset from the center, in pixels. */
+	y: number;
+	opacity: number;
+	visible: boolean;
+	/** True for the row inside the center band. */
+	selected: boolean;
 }
 
 export interface Wheel {
@@ -34,6 +58,9 @@ export interface Wheel {
 	readonly count: number;
 	readonly loop: boolean;
 	readonly dragging: boolean;
+
+	/** Layout for the rows around the current position. */
+	slots(): WheelSlot[];
 
 	/** Start a drag at the pointer's vertical position in pixels. */
 	pointerDown(y: number, time?: number): void;
@@ -72,6 +99,9 @@ export function createWheel(options: WheelOptions): Wheel {
 	const tracker = createVelocityTracker();
 	const listeners = new Set<() => void>();
 	const itemHeight = options.itemHeight ?? 36;
+	const radius = options.radius ?? 100;
+	const itemAngle = ((options.itemAngle ?? 21) * Math.PI) / 180;
+	const overscan = options.overscan ?? 5;
 	const loop = options.loop ?? false;
 	const count = options.count;
 
@@ -148,6 +178,29 @@ export function createWheel(options: WheelOptions): Wheel {
 		},
 		get dragging() {
 			return drag !== null;
+		},
+
+		slots() {
+			const base = Math.round(position);
+			const slots: WheelSlot[] = [];
+			for (let key = 0; key <= overscan * 2; key++) {
+				const item = base - overscan + key;
+				const offset = item - position;
+				const angle = offset * itemAngle;
+				const inRange = loop || (item >= 0 && item < count);
+				const visible = inRange && Math.abs(angle) <= Math.PI / 2;
+				slots.push({
+					key,
+					index: inRange ? wrap(item, count) : -1,
+					offset,
+					angle,
+					y: radius * Math.sin(angle),
+					opacity: Math.max(0, Math.cos(angle)) ** 1.4,
+					visible,
+					selected: Math.abs(offset) < 0.5,
+				});
+			}
+			return slots;
 		},
 
 		pointerDown(y, time = scheduler.now()) {

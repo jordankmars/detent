@@ -180,3 +180,58 @@ describe("createWheel", () => {
 		expect(calls).toBe(0);
 	});
 });
+
+describe("slots", () => {
+	it("renders the selected item in the middle row", () => {
+		const { wheel } = setup({ index: 4 });
+		const slots = wheel.slots();
+		expect(slots).toHaveLength(11);
+		const middle = slots[5];
+		expect(middle).toMatchObject({ index: 4, offset: 0, y: 0, selected: true });
+		expect(middle.opacity).toBe(1);
+		expect(slots.filter((slot) => slot.selected)).toHaveLength(1);
+	});
+
+	it("places rows around the cylinder", () => {
+		const { wheel } = setup({ index: 4 });
+		const [above, below] = [wheel.slots()[4], wheel.slots()[6]];
+		const angle = (21 * Math.PI) / 180;
+		expect(above.angle).toBeCloseTo(-angle);
+		expect(above.y).toBeCloseTo(100 * Math.sin(-angle));
+		expect(below.y).toBeCloseTo(-above.y);
+		expect(below.opacity).toBeLessThan(1);
+	});
+
+	it("hides rows that have turned past the top and bottom", () => {
+		const { wheel } = setup({ index: 6 });
+		const slots = wheel.slots();
+		// 5 rows * 21 degrees is past 90, 4 rows is not.
+		expect(slots[0].visible).toBe(false);
+		expect(slots[1].visible).toBe(true);
+		expect(slots[10].visible).toBe(false);
+	});
+
+	it("hides rows past the ends of a non-looping wheel", () => {
+		const { wheel } = setup({ index: 0 });
+		const slots = wheel.slots();
+		expect(slots[4]).toMatchObject({ index: -1, visible: false });
+		expect(slots[6]).toMatchObject({ index: 1, visible: true });
+	});
+
+	it("wraps rows around when looping", () => {
+		const { wheel } = setup({ index: 0, loop: true });
+		const slots = wheel.slots();
+		expect(slots[4]).toMatchObject({ index: 11, visible: true });
+		expect(slots[3].index).toBe(10);
+	});
+
+	it("keeps row keys stable between positions", () => {
+		const t = setup({ index: 3, loop: true });
+		t.wheel.pointerDown(0);
+		t.wheel.pointerMove(-ITEM * 0.4);
+		expect(t.wheel.slots().map((slot) => slot.key)).toEqual([
+			0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+		]);
+		expect(t.wheel.slots()[5].offset).toBeCloseTo(-0.4);
+	});
+});
