@@ -86,6 +86,14 @@ export interface Wheel {
 	 */
 	scroll(deltaY: number, deltaMode?: number): boolean;
 
+	/**
+	 * Change the number of items, for wheels that depend on each other, like
+	 * days in a month. Keeps the selected item where it is. If it no longer
+	 * exists, a bounded wheel animates to the new last item and a looping one
+	 * moves straight there, since the items in between are gone.
+	 */
+	setCount(count: number): void;
+
 	/** Select an item, either jumping there or animating along the shortest path. */
 	setIndex(index: number, options?: { animate?: boolean }): void;
 
@@ -135,7 +143,7 @@ export function createWheel(options: WheelOptions): Wheel {
 	const itemAngle = ((options.itemAngle ?? 21) * Math.PI) / 180;
 	const overscan = options.overscan ?? 5;
 	const loop = options.loop ?? false;
-	const count = options.count;
+	let count = options.count;
 
 	let position = normalize(options.index ?? 0);
 	let target = position;
@@ -325,6 +333,28 @@ export function createWheel(options: WheelOptions): Wheel {
 				settle(Math.round(target));
 			}, SCROLL_IDLE);
 			return true;
+		},
+
+		setCount(next) {
+			if (next === count) return;
+			if (loop) {
+				// Re-base the unwrapped position onto the same item in the new range,
+				// otherwise a looping wheel would show a different item. Anything
+				// past the new end shifts onto the last item.
+				const kept = Math.min(index, next - 1);
+				const shift = kept - Math.round(position);
+				position += shift;
+				target += shift;
+				if (drag) drag.start += shift;
+				count = next;
+				return notify();
+			}
+			count = next;
+			if (index > count - 1 && !drag) {
+				settle(count - 1, velocity);
+			} else {
+				notify();
+			}
 		},
 
 		setIndex(next, { animate = false } = {}) {

@@ -318,6 +318,71 @@ describe("createWheel", () => {
 		});
 	});
 
+	describe("setCount", () => {
+		it("keeps the selected item when it still exists", () => {
+			const t = setup({ index: 14, count: 31 });
+			t.wheel.setCount(28);
+			expect(t.wheel.index).toBe(14);
+			expect(t.wheel.count).toBe(28);
+			expect(t.scheduler.pending()).toBe(false);
+		});
+
+		it("animates to the last item when the selection disappears", () => {
+			const t = setup({ index: 30, count: 31 });
+			t.wheel.setCount(28);
+			t.scheduler.advance();
+			expect(t.wheel.position).toBeGreaterThan(27);
+			t.scheduler.flush();
+			expect(t.wheel.position).toBe(27);
+			expect(t.changes.at(-1)).toBe(27);
+		});
+
+		it("keeps the selected item when looping", () => {
+			const t = setup({ index: 0, count: 31, loop: true });
+			// Spin forwards past the end so the position is unwrapped.
+			t.wheel.setIndex(40);
+			expect(t.wheel.index).toBe(9);
+			t.wheel.setCount(30);
+			expect(t.wheel.index).toBe(9);
+			expect(t.wheel.slots()[5].index).toBe(9);
+		});
+
+		it("moves straight to the last item when looping", () => {
+			const t = setup({ index: 30, count: 31, loop: true });
+			t.wheel.setCount(29);
+			expect(t.wheel.index).toBe(28);
+			expect(t.wheel.slots()[5].index).toBe(28);
+			expect(t.scheduler.pending()).toBe(false);
+		});
+
+		it("keeps a looping wheel moving", () => {
+			const t = setup({ index: 0, count: 31, loop: true });
+			t.wheel.setIndex(5, { animate: true });
+			t.scheduler.advance(2);
+			t.wheel.setCount(28);
+			t.scheduler.flush();
+			expect(t.wheel.index).toBe(5);
+		});
+
+		it("lets a drag in progress carry on", () => {
+			const t = setup({ index: 30, count: 31 });
+			t.wheel.pointerDown(0);
+			t.wheel.setCount(28);
+			expect(t.wheel.dragging).toBe(true);
+			t.scheduler.wait(500);
+			t.wheel.pointerUp();
+			t.scheduler.flush();
+			expect(t.wheel.position).toBe(27);
+		});
+
+		it("adds new items without moving", () => {
+			const t = setup({ index: 27, count: 28 });
+			t.wheel.setCount(31);
+			expect(t.wheel.position).toBe(27);
+			expect(t.wheel.slots()[8].index).toBe(30);
+		});
+	});
+
 	describe("setIndex", () => {
 		it("jumps without animating by default", () => {
 			const t = setup();
