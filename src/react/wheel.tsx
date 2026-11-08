@@ -206,6 +206,11 @@ function WheelBody<T>({
 		[binding, model, loop, wanted, settled],
 	);
 
+	const { reducedMotion } = root;
+	useEffect(() => {
+		engine.setReducedMotion(reducedMotion);
+	}, [engine, reducedMotion]);
+
 	const activePointer = useRef<number | null>(null);
 
 	useEffect(() => {
@@ -330,7 +335,14 @@ function WheelImpl<T>(props: WheelProps<T>, ref: Ref<HTMLDivElement>) {
 		);
 	}
 	return (
-		<WheelBody {...props} root={root} position={slot} forwardedRef={ref} />
+		// The engine's geometry is fixed when it's created.
+		<WheelBody
+			key={root.itemHeight}
+			{...props}
+			root={root}
+			position={slot}
+			forwardedRef={ref}
+		/>
 	);
 }
 

@@ -336,3 +336,64 @@ describe("a parent that overrides the wheel", () => {
 		expect(selectedText(wheel)).toBe("c");
 	});
 });
+
+function LinkedDate({
+	onValueCommit,
+}: {
+	onValueCommit: (value: number[]) => void;
+}) {
+	const [value, setValue] = useState([0, 30]);
+	const length = value[0] === 1 ? 28 : 31;
+	const days = Array.from({ length }, (_, i) => i);
+	return (
+		<Root
+			value={value}
+			onValueChange={setValue}
+			onValueCommit={onValueCommit}
+			reducedMotion
+		>
+			<Wheel items={[0, 1]} />
+			<Wheel items={days} />
+		</Root>
+	);
+}
+
+describe("reduced motion", () => {
+	it("jumps straight to the item and reports it", () => {
+		const harness = createHarness();
+		const onValueCommit = vi.fn();
+		const { container } = render(
+			<Root defaultValue={["a"]} onValueCommit={onValueCommit} reducedMotion>
+				<Wheel items={LETTERS} />
+			</Root>,
+			{ wrapper: harness.wrapper },
+		);
+		const wheel = wheels(container)[0];
+		fireEvent.keyDown(wheel, { key: "End" });
+		expect(selectedText(wheel)).toBe("e");
+		expect(onValueCommit).toHaveBeenCalledExactlyOnceWith(["e"]);
+	});
+
+	it("snaps a rejected change back", () => {
+		const harness = createHarness();
+		const { container } = render(
+			<Root value={["a"]} reducedMotion>
+				<Wheel items={LETTERS} />
+			</Root>,
+			{ wrapper: harness.wrapper },
+		);
+		const wheel = wheels(container)[0];
+		fireEvent.keyDown(wheel, { key: "ArrowDown" });
+		expect(selectedText(wheel)).toBe("a");
+	});
+
+	it("commits a linked wheel that was clamped", () => {
+		const harness = createHarness();
+		const onValueCommit = vi.fn();
+		const { container } = render(<LinkedDate onValueCommit={onValueCommit} />, {
+			wrapper: harness.wrapper,
+		});
+		fireEvent.keyDown(wheels(container)[0], { key: "ArrowDown" });
+		expect(onValueCommit).toHaveBeenLastCalledWith([1, 27]);
+	});
+});

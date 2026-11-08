@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
-import { fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { type KeyboardEvent, StrictMode } from "react";
-import { describe, expect, it } from "vitest";
+import { hydrateRoot, type Root as ReactRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
 import { Root } from "./root";
 import { createHarness, selectedText, wheels } from "./test-utils";
 import { Wheel } from "./wheel";
@@ -87,6 +89,61 @@ describe("rendering", () => {
 		);
 		expect(element).toBe(wheels(container)[0]);
 		expect(wheels(container)[0].className).toBe("mine");
+	});
+});
+
+describe("itemHeight", () => {
+	it("scales the rows and drags by the new height", () => {
+		const harness = createHarness();
+		const { container } = render(
+			<Root defaultValue={["a"]} itemHeight={50}>
+				<Wheel items={LETTERS} />
+			</Root>,
+			{ wrapper: harness.wrapper },
+		);
+		const wheel = wheels(container)[0];
+		const row = wheel.querySelector<HTMLElement>("[data-detent-item]");
+		expect(row?.style.height).toBe("50px");
+		fireEvent.pointerDown(wheel, { clientY: 100, pointerId: 1, button: 0 });
+		fireEvent.pointerMove(wheel, { clientY: 50, pointerId: 1 });
+		expect(selectedText(wheel)).toBe("b");
+	});
+
+	it("keeps the value when it changes", () => {
+		const harness = createHarness();
+		const ui = (itemHeight: number) => (
+			<Root value={["c"]} itemHeight={itemHeight}>
+				<Wheel items={LETTERS} />
+			</Root>
+		);
+		const view = render(ui(36), { wrapper: harness.wrapper });
+		view.rerender(ui(50));
+		expect(selectedText(wheels(view.container)[0])).toBe("c");
+	});
+});
+
+describe("hydration", () => {
+	it("matches the server markup", () => {
+		const errors = vi.spyOn(console, "error");
+		const ui = (
+			<Root value={["c", "a"]}>
+				<Wheel items={LETTERS} loop />
+				<span>:</span>
+				<Wheel items={LETTERS} />
+			</Root>
+		);
+		const container = document.createElement("div");
+		document.body.append(container);
+		container.innerHTML = renderToString(ui);
+		let root: ReactRoot | undefined;
+		act(() => {
+			root = hydrateRoot(container, ui);
+		});
+		expect(errors).not.toHaveBeenCalled();
+		expect(selectedText(wheels(container)[0])).toBe("c");
+		act(() => root?.unmount());
+		container.remove();
+		errors.mockRestore();
 	});
 });
 

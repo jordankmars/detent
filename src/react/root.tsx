@@ -23,9 +23,8 @@ import {
 	safely,
 } from "./context";
 import { DEFAULT_STYLES } from "./styles";
+import { useReducedMotion } from "./use-reduced-motion";
 import { Wheel } from "./wheel";
-
-const ITEM_HEIGHT = 36;
 
 export interface RootProps<V = string>
 	extends Omit<ComponentPropsWithoutRef<"div">, "defaultValue"> {
@@ -38,6 +37,10 @@ export interface RootProps<V = string>
 	/** Called when a change made by the user comes to rest. */
 	onValueCommit?: (value: V[]) => void;
 	disabled?: boolean;
+	/** Height of one item in pixels. Everything else scales from it. */
+	itemHeight?: number;
+	/** Overrides the user's `prefers-reduced-motion` setting. */
+	reducedMotion?: boolean;
 }
 
 interface ElementWithChildren {
@@ -78,6 +81,8 @@ function RootImpl<V>(
 		onValueChange,
 		onValueCommit,
 		disabled = false,
+		itemHeight = 36,
+		reducedMotion: reducedMotionProp,
 		style,
 		children,
 		...rest
@@ -90,15 +95,16 @@ function RootImpl<V>(
 	const latest = useRef<unknown[]>([]);
 	const [engines] = useState(() => new Set<Engine>());
 
-	const { bandHeight } = geometry(ITEM_HEIGHT);
+	const systemReducedMotion = useReducedMotion();
+	const { bandHeight } = geometry(itemHeight);
 
 	const context: RootContextValue = {
 		value: controlled ?? uncontrolled,
 		latest,
 		engines,
-		itemHeight: ITEM_HEIGHT,
+		itemHeight,
 		disabled,
-		reducedMotion: false,
+		reducedMotion: reducedMotionProp ?? systemReducedMotion,
 		change(next) {
 			if (controlled === undefined) setUncontrolled(next);
 			safely(() => onValueChange?.(next as V[]));
