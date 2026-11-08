@@ -10,6 +10,7 @@ import {
 	type ReactElement,
 	type Ref,
 	type RefAttributes,
+	useCallback,
 	useContext,
 	useEffect,
 	useImperativeHandle,
@@ -127,6 +128,9 @@ function WheelBody<T>({
 	const model = reconcileItems(modelRef.current, items, getValue, getLabel);
 	modelRef.current = model;
 
+	const [settled, setSettled] = useState(0);
+	const onUserSettle = useCallback(() => setSettled((n) => n + 1), []);
+
 	const [binding] = useState(() =>
 		createBinding({
 			model,
@@ -134,6 +138,7 @@ function WheelBody<T>({
 			slot,
 			loop,
 			disabled,
+			onUserSettle,
 			scheduler: internal.scheduler,
 		}),
 	);
@@ -149,7 +154,7 @@ function WheelBody<T>({
 	);
 
 	useIsomorphicLayoutEffect(() => {
-		binding.props = { model, root, slot, loop, disabled };
+		binding.props = { model, root, slot, loop, disabled, onUserSettle };
 	});
 	useIsomorphicLayoutEffect(
 		() => binding.connect(element.current as HTMLElement),
@@ -160,7 +165,7 @@ function WheelBody<T>({
 	// `sync` reads these from `binding.props`, set by the effect above.
 	useIsomorphicLayoutEffect(
 		() => binding.sync(),
-		[binding, model, loop, wanted],
+		[binding, model, loop, wanted, settled],
 	);
 
 	const activePointer = useRef<number | null>(null);

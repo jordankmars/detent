@@ -93,7 +93,7 @@ describe("rendering", () => {
 function mount(items = LETTERS, value = "c", props = {}) {
 	const harness = createHarness();
 	const { container } = render(
-		<Root value={[value]}>
+		<Root defaultValue={[value]}>
 			<Wheel items={items} aria-label="Letter" {...props} />
 		</Root>,
 		{ wrapper: harness.wrapper },

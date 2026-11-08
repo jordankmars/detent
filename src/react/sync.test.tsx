@@ -1,11 +1,33 @@
 // @vitest-environment jsdom
 import { act, fireEvent, render } from "@testing-library/react";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { Root } from "./root";
 import { createHarness, selectedText, wheels } from "./test-utils";
 import { Wheel } from "./wheel";
 
 const LETTERS = ["a", "b", "c", "d", "e"];
+
+function Picker({
+	initial,
+	limit = (next) => next,
+	onValueCommit,
+}: {
+	initial: string[];
+	limit?: (next: string) => string;
+	onValueCommit?: (value: string[]) => void;
+}) {
+	const [value, setValue] = useState(initial);
+	return (
+		<Root
+			value={value}
+			onValueChange={([next]) => setValue([limit(next)])}
+			onValueCommit={onValueCommit}
+		>
+			<Wheel items={LETTERS} />
+		</Root>
+	);
+}
 
 function setup(initial: unknown[], items: readonly unknown[] = LETTERS) {
 	const harness = createHarness();
@@ -248,5 +270,69 @@ describe("reporting user changes", () => {
 		expect(selectedText(first)).toBe("b");
 		expect(selectedText(second)).toBe("b");
 		vi.unstubAllGlobals();
+	});
+});
+
+describe("committing", () => {
+	function controlled(initial: string[]) {
+		const harness = createHarness();
+		const onValueCommit = vi.fn();
+		const { container } = render(
+			<Picker initial={initial} onValueCommit={onValueCommit} />,
+			{ wrapper: harness.wrapper },
+		);
+		return { harness, onValueCommit, wheel: wheels(container)[0] };
+	}
+
+	it("commits once when the wheel comes to rest", () => {
+		const { harness, wheel, onValueCommit } = controlled(["a"]);
+		fireEvent.keyDown(wheel, { key: "End" });
+		harness.flush();
+		expect(onValueCommit).toHaveBeenCalledExactlyOnceWith(["e"]);
+	});
+
+	it("doesn't commit when the wheel lands where it started", () => {
+		const { harness, wheel, onValueCommit } = controlled(["a"]);
+		fireEvent.pointerDown(wheel, { clientY: 0, pointerId: 1, button: 0 });
+		fireEvent.pointerUp(wheel, { clientY: 0, pointerId: 1 });
+		harness.flush();
+		expect(onValueCommit).not.toHaveBeenCalled();
+	});
+
+	it("doesn't commit a change made through the value prop", () => {
+		const harness = createHarness();
+		const onValueCommit = vi.fn();
+		const ui = (value: string[]) => (
+			<Root value={value} onValueCommit={onValueCommit}>
+				<Wheel items={LETTERS} />
+			</Root>
+		);
+		const view = render(ui(["a"]), { wrapper: harness.wrapper });
+		view.rerender(ui(["e"]));
+		harness.flush();
+		expect(onValueCommit).not.toHaveBeenCalled();
+	});
+});
+
+describe("a parent that overrides the wheel", () => {
+	it("snaps back when the change is rejected", () => {
+		const { harness, wheel } = setup(["a"]);
+		fireEvent.keyDown(wheel, { key: "ArrowDown" });
+		harness.flush();
+		harness.flush();
+		expect(selectedText(wheel)).toBe("a");
+	});
+
+	it("moves to the value the parent chose instead", () => {
+		const harness = createHarness();
+		const { container } = render(
+			<Picker initial={["a"]} limit={(next) => (next > "c" ? "c" : next)} />,
+			{ wrapper: harness.wrapper },
+		);
+		const wheel = wheels(container)[0];
+		fireEvent.keyDown(wheel, { key: "End" });
+		harness.flush();
+		harness.flush();
+		expect(selectedText(wheel)).toBe("c");
 	});
 });

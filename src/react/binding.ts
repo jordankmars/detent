@@ -41,6 +41,8 @@ export interface BindingProps {
 	slot: number;
 	loop: boolean;
 	disabled: boolean;
+	/** Re-renders the wheel, so it can check the parent kept what it reported. */
+	onUserSettle: () => void;
 }
 
 export interface InitialAria {
@@ -78,7 +80,8 @@ export interface Binding {
 export function createBinding(
 	initial: BindingProps & { scheduler?: Scheduler },
 ): Binding {
-	const { model, root, slot, loop, disabled, scheduler } = initial;
+	const { model, root, slot, loop, disabled, onUserSettle, scheduler } =
+		initial;
 	const start = model.indexOf(root.value[slot]);
 
 	const engine = createWheel({
@@ -93,6 +96,13 @@ export function createBinding(
 		onIndexChange(index) {
 			if (userDriven && !syncing && index >= 0) write(index);
 		},
+		onSettle(index) {
+			if (!userDriven || syncing || index < 0) return;
+			userDriven = false;
+			write(index);
+			commit(index);
+			binding.props.onUserSettle();
+		},
 	});
 
 	/**
@@ -103,6 +113,8 @@ export function createBinding(
 	let userDriven = false;
 	/** True while applying props, when the engine's reports are just echoes. */
 	let syncing = false;
+	/** The value last confirmed at rest, to skip commits that change nothing. */
+	let lastCommitted: unknown;
 
 	const rows: (HTMLElement | null)[] = [];
 	/** The text each row shows, to skip writing what's already there. */
@@ -172,6 +184,20 @@ export function createBinding(
 		root.change(Array.from(latest));
 	}
 
+	function commit(index: number) {
+		const { model, root } = binding.props;
+		if (Object.is(model.values[index], lastCommitted)) return;
+		lastCommitted = model.values[index];
+		root.commit(Array.from(root.latest.current));
+	}
+
+	function othersMoving() {
+		for (const other of binding.props.root.engines) {
+			if (other !== engine && other.moving) return true;
+		}
+		return false;
+	}
+
 	let previousModel: ItemModel | null = null;
 	let foundBefore = false;
 
@@ -204,12 +230,16 @@ export function createBinding(
 				if (foundBefore && wanted !== undefined) {
 					// The value existed and is now gone, like the 31st in February.
 					write(heading);
+					// A sibling still moving will commit this along with its own
+					// change. Otherwise nothing else will, and it must be reported.
+					if (!othersMoving()) commit(heading);
 				} else {
 					// Never been a match, so it isn't this wheel's to overwrite.
-					latest[slot] = wanted !== undefined ? wanted : model.values[heading];
+					latest[slot] = lastCommitted =
+						wanted !== undefined ? wanted : model.values[heading];
 				}
 			} else {
-				latest[slot] = wanted;
+				latest[slot] = lastCommitted = wanted;
 				// An effect cleanup can stop the engine between two items.
 				const stranded = !engine.moving && engine.position !== engine.target;
 				if (found !== heading || stranded) {
@@ -258,7 +288,7 @@ export function createBinding(
 	const binding: Binding = {
 		engine,
 		rows,
-		props: { model, root, slot, loop, disabled },
+		props: { model, root, slot, loop, disabled, onUserSettle },
 
 		initialRows() {
 			const result: InitialRow[] = [];
