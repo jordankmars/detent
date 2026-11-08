@@ -1,9 +1,15 @@
 {
 	"name": "detent",
 	"version": "0.0.0",
-	"description": "",
+	"description": "The iOS scroll-wheel picker for the web, for times, dates or any list.",
 	"keywords": [
-		"react"
+		"react",
+		"picker",
+		"wheel-picker",
+		"time-picker",
+		"date-picker",
+		"scroll-wheel",
+		"ios"
 	],
 	"homepage": "https://github.com/jordankmars/detent#readme",
 	"bugs": {
