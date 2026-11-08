@@ -11,6 +11,8 @@ import type { ItemModel } from "./items";
 /** Rows either side of the center, as the engine lays them out. */
 const OVERSCAN = 5;
 export const ROW_COUNT = OVERSCAN * 2 + 1;
+/** Rows this close to the center are too visible to leave blank for a frame. */
+const CENTER_ROWS = 3;
 
 /** Item height the geometry below was tuned at. */
 const BASE_ITEM_HEIGHT = 36;
@@ -43,6 +45,10 @@ export interface BindingProps {
 	disabled: boolean;
 	/** Re-renders the wheel, so it can check the parent kept what it reported. */
 	onUserSettle: () => void;
+	/** Rows are rendered by React rather than written by `paint`. */
+	custom: boolean;
+	/** Asks React to show these items, by ring position. */
+	onRowsChange: (items: number[]) => void;
 }
 
 export interface InitialAria {
@@ -52,6 +58,8 @@ export interface InitialAria {
 }
 
 export interface InitialRow {
+	/** The item shown, or -1 past the ends of a bounded wheel. */
+	index: number;
 	label: string;
 	selected: boolean;
 	visible: boolean;
@@ -75,13 +83,26 @@ export interface Binding {
 	input(call: () => boolean): boolean;
 	/** Brings the engine in line with the latest props. */
 	sync(): void;
+	/** Records what React has put on screen, then repaints to match. */
+	commitRows(items: number[]): void;
+	/** Forgets what rows contain, after they've been replaced. */
+	resetRows(): void;
 }
 
 export function createBinding(
 	initial: BindingProps & { scheduler?: Scheduler },
 ): Binding {
-	const { model, root, slot, loop, disabled, onUserSettle, scheduler } =
-		initial;
+	const {
+		model,
+		root,
+		slot,
+		loop,
+		disabled,
+		onUserSettle,
+		custom,
+		onRowsChange,
+		scheduler,
+	} = initial;
 	const start = model.indexOf(root.value[slot]);
 
 	const engine = createWheel({
@@ -119,6 +140,9 @@ export function createBinding(
 	const rows: (HTMLElement | null)[] = [];
 	/** The text each row shows, to skip writing what's already there. */
 	const shown: string[] = [];
+	/** With `renderItem`, the items asked of React and those it has shown. */
+	let requested: number[] = [];
+	let committed: number[] = [];
 	let element: HTMLElement | null = null;
 
 	/** The engine's index, or what it will be once a shrink has caught up. */
@@ -262,21 +286,54 @@ export function createBinding(
 	const ringOf = (slot: WheelSlot) =>
 		wrap(Math.round(engine.position) - OVERSCAN + slot.key, ROW_COUNT);
 
+	/**
+	 * Asks React for any rows that need new content. Returns false if a row
+	 * close to the center is out of date, so that painting now would show the
+	 * wrong item there. React's commit paints instead.
+	 */
+	function requestRows(slots: WheelSlot[]) {
+		const items = new Array<number>(ROW_COUNT);
+		let current = true;
+		let changed = false;
+		for (const slot of slots) {
+			const ring = ringOf(slot);
+			items[ring] = slot.index;
+			if (requested[ring] !== slot.index) changed = true;
+			if (
+				committed[ring] !== slot.index &&
+				slot.visible &&
+				Math.abs(slot.offset) <= CENTER_ROWS
+			) {
+				current = false;
+			}
+		}
+		if (changed) {
+			requested = items;
+			binding.props.onRowsChange(items);
+		}
+		return current;
+	}
+
 	function paint() {
-		const { labels } = binding.props.model;
-		for (const slot of engine.slots()) {
+		const { model, custom } = binding.props;
+		const slots = engine.slots();
+		if (custom && !requestRows(slots)) return;
+		for (const slot of slots) {
 			const ring = ringOf(slot);
 			const row = rows[ring];
 			if (!row) continue;
-			if (!slot.visible) {
+			// A row waiting on React stays hidden rather than showing old content.
+			if (!slot.visible || (custom && committed[ring] !== slot.index)) {
 				row.style.visibility = "hidden";
 				continue;
 			}
 			row.style.visibility = "";
-			const label = labels[slot.index] ?? "";
-			if (shown[ring] !== label) {
-				row.textContent = label;
-				shown[ring] = label;
+			if (!custom) {
+				const label = model.labels[slot.index] ?? "";
+				if (shown[ring] !== label) {
+					row.textContent = label;
+					shown[ring] = label;
+				}
 			}
 			row.style.transform = transformOf(slot);
 			row.style.opacity = String(slot.opacity);
@@ -288,7 +345,16 @@ export function createBinding(
 	const binding: Binding = {
 		engine,
 		rows,
-		props: { model, root, slot, loop, disabled, onUserSettle },
+		props: {
+			model,
+			root,
+			slot,
+			loop,
+			disabled,
+			onUserSettle,
+			custom,
+			onRowsChange,
+		},
 
 		initialRows() {
 			const result: InitialRow[] = [];
@@ -296,7 +362,9 @@ export function createBinding(
 				const ring = ringOf(slot);
 				const label = model.labels[slot.index] ?? "";
 				shown[ring] = label;
+				requested[ring] = committed[ring] = slot.index;
 				result[ring] = {
+					index: slot.index,
 					label,
 					selected: slot.selected,
 					visible: slot.visible,
@@ -339,6 +407,15 @@ export function createBinding(
 		paint,
 		input,
 		sync,
+
+		commitRows(items) {
+			committed = items;
+			paint();
+		},
+
+		resetRows() {
+			shown.length = 0;
+		},
 	};
 
 	return binding;

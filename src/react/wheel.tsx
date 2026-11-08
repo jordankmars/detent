@@ -3,11 +3,13 @@
 import {
 	type ComponentPropsWithoutRef,
 	type CSSProperties,
+	Fragment,
 	forwardRef,
 	type KeyboardEvent,
 	memo,
 	type PointerEvent,
 	type ReactElement,
+	type ReactNode,
 	type Ref,
 	type RefAttributes,
 	useCallback,
@@ -49,6 +51,8 @@ export interface WheelProps<T = unknown>
 	getValue?: GetValue<T>;
 	/** The text shown and spoken. Defaults to `item.label`, or the value. */
 	getLabel?: GetLabel<T>;
+	/** Custom row content. `getLabel` still provides the spoken text. */
+	renderItem?: (item: T, index: number) => ReactNode;
 }
 
 interface RowProps {
@@ -56,17 +60,24 @@ interface RowProps {
 	binding: Binding;
 	itemHeight: number;
 	initial: InitialRow;
+	/** Present only for rows React renders. */
+	renderItem?: (item: never, index: number) => ReactNode;
+	item?: unknown;
+	index?: number;
 }
 
 /**
- * One row. Renders once, then `paint` writes to the element directly, so its
- * props must never change or React would overwrite those writes.
+ * One row. `paint` writes position and text straight to the element, so those
+ * props come from `initial`, which never changes, and React leaves them alone.
  */
 const Row = memo(function Row({
 	ring,
 	binding,
 	itemHeight,
 	initial,
+	renderItem,
+	item,
+	index = -1,
 }: RowProps) {
 	const style: CSSProperties = {
 		position: "absolute",
@@ -92,7 +103,12 @@ const Row = memo(function Row({
 			aria-hidden
 			style={style}
 		>
-			{initial.label}
+			{!renderItem ? (
+				initial.label
+			) : index >= 0 ? (
+				// Keyed so a row reused for another item starts with fresh state.
+				<Fragment key={index}>{renderItem(item as never, index)}</Fragment>
+			) : null}
 		</div>
 	);
 });
@@ -113,6 +129,7 @@ function WheelBody<T>({
 	index: _index,
 	getValue,
 	getLabel,
+	renderItem,
 	style,
 	onPointerDown,
 	onPointerMove,
@@ -128,6 +145,8 @@ function WheelBody<T>({
 	const model = reconcileItems(modelRef.current, items, getValue, getLabel);
 	modelRef.current = model;
 
+	const custom = renderItem !== undefined;
+	const [requestedRows, setRowItems] = useState<number[] | null>(null);
 	const [settled, setSettled] = useState(0);
 	const onUserSettle = useCallback(() => setSettled((n) => n + 1), []);
 
@@ -139,10 +158,14 @@ function WheelBody<T>({
 			loop,
 			disabled,
 			onUserSettle,
+			custom,
+			onRowsChange: setRowItems,
 			scheduler: internal.scheduler,
 		}),
 	);
 	const [initial] = useState(() => binding.initialRows());
+	const [initialItems] = useState(() => initial.map((row) => row.index));
+	const rowItems = requestedRows ?? initialItems;
 	const [aria] = useState(() => binding.initialAria());
 	const { engine } = binding;
 
@@ -154,8 +177,23 @@ function WheelBody<T>({
 	);
 
 	useIsomorphicLayoutEffect(() => {
-		binding.props = { model, root, slot, loop, disabled, onUserSettle };
+		binding.props = {
+			model,
+			root,
+			slot,
+			loop,
+			disabled,
+			onUserSettle,
+			custom,
+			onRowsChange: setRowItems,
+		};
 	});
+	// Switching modes replaces the rows, so `custom` is the trigger here.
+	useIsomorphicLayoutEffect(() => binding.resetRows(), [binding, custom]);
+	useIsomorphicLayoutEffect(
+		() => binding.commitRows(rowItems),
+		[binding, rowItems],
+	);
 	useIsomorphicLayoutEffect(
 		() => binding.connect(element.current as HTMLElement),
 		[binding],
@@ -258,17 +296,24 @@ function WheelBody<T>({
 				...style,
 			}}
 		>
-			{initial.map((row, ring) => (
-				<Row
-					// Rows are positions on a ring, so the ring index is the identity.
-					// biome-ignore lint/suspicious/noArrayIndexKey: see above
-					key={ring}
-					ring={ring}
-					binding={binding}
-					itemHeight={itemHeight}
-					initial={row}
-				/>
-			))}
+			{initial.map((row, ring) => {
+				const item = rowItems[ring] < items.length ? rowItems[ring] : -1;
+				return (
+					<Row
+						// biome-ignore lint/suspicious/noArrayIndexKey: rows are positions on a ring, so the ring index is the identity
+						key={`${custom ? "custom" : "text"}-${ring}`}
+						ring={ring}
+						binding={binding}
+						itemHeight={itemHeight}
+						initial={row}
+						{...(custom && {
+							renderItem: renderItem as RowProps["renderItem"],
+							item: items[item],
+							index: item,
+						})}
+					/>
+				);
+			})}
 		</div>
 	);
 }
