@@ -467,6 +467,59 @@ describe("createWheel", () => {
 		});
 	});
 
+	describe("reduced motion", () => {
+		it("jumps to the snapped item on release", () => {
+			const t = setup({ index: 0, count: 60, loop: true, reducedMotion: true });
+			drag(t, -ITEM * 2, 64);
+			t.wheel.pointerUp();
+			expect(Number.isInteger(t.wheel.position)).toBe(true);
+			expect(t.wheel.position).toBeGreaterThan(2);
+			expect(t.scheduler.pending()).toBe(false);
+		});
+
+		it("still follows the pointer while dragging", () => {
+			const t = setup({ index: 5, reducedMotion: true });
+			t.wheel.pointerDown(0);
+			t.wheel.pointerMove(-ITEM * 0.5);
+			expect(t.wheel.position).toBe(5.5);
+		});
+
+		it("jumps for keys, taps and notches", () => {
+			const t = setup({ index: 5, reducedMotion: true });
+			t.wheel.key("ArrowDown");
+			expect(t.wheel.position).toBe(6);
+			t.wheel.pointerDown(0);
+			t.wheel.pointerUp(t.wheel.slots()[4].y);
+			expect(t.wheel.position).toBe(5);
+			t.wheel.scroll(3, 1);
+			expect(t.wheel.position).toBeCloseTo(6.8);
+		});
+
+		it("animates setIndex instantly", () => {
+			const t = setup({ reducedMotion: true });
+			t.wheel.setIndex(9, { animate: true });
+			expect(t.wheel.position).toBe(9);
+		});
+
+		it("can be switched on mid-animation", () => {
+			const t = setup({ index: 0 });
+			t.wheel.setIndex(9, { animate: true });
+			t.scheduler.advance(2);
+			t.wheel.setReducedMotion(true);
+			expect(t.wheel.position).toBe(9);
+			expect(t.wheel.velocity).toBe(0);
+		});
+
+		it("can be switched off again", () => {
+			const t = setup({ index: 0, reducedMotion: true });
+			t.wheel.setReducedMotion(false);
+			t.wheel.setIndex(9, { animate: true });
+			expect(t.wheel.position).toBe(0);
+			t.scheduler.flush();
+			expect(t.wheel.position).toBe(9);
+		});
+	});
+
 	describe("setIndex", () => {
 		it("jumps without animating by default", () => {
 			const t = setup();

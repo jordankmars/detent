@@ -8,6 +8,10 @@ const ITEM_HEIGHT = 36;
 
 // ---------- DOM wiring ----------
 
+const reducedMotionQuery = window.matchMedia(
+	"(prefers-reduced-motion: reduce)",
+);
+
 interface BindOptions {
 	items: string[];
 	loop?: boolean;
@@ -33,6 +37,7 @@ function bindWheel(element: HTMLElement, options: BindOptions) {
 		loop,
 		index: options.index,
 		itemHeight: ITEM_HEIGHT,
+		reducedMotion: reducedMotionQuery.matches,
 		onIndexChange: (index) => {
 			updateAria(index);
 			options.onChange(index);
@@ -76,6 +81,8 @@ function bindWheel(element: HTMLElement, options: BindOptions) {
 	const onWheel = (event: WheelEvent) => {
 		if (wheel.scroll(event.deltaY, event.deltaMode)) event.preventDefault();
 	};
+	const onMotionChange = () =>
+		wheel.setReducedMotion(reducedMotionQuery.matches);
 	const onKeyDown = (event: KeyboardEvent) => {
 		if (wheel.key(event.key)) event.preventDefault();
 	};
@@ -88,6 +95,7 @@ function bindWheel(element: HTMLElement, options: BindOptions) {
 	element.addEventListener("pointercancel", onPointerCancel);
 	element.addEventListener("keydown", onKeyDown);
 	element.addEventListener("wheel", onWheel, { passive: false });
+	reducedMotionQuery.addEventListener("change", onMotionChange);
 	const unsubscribe = wheel.subscribe(paint);
 	updateAria(wheel.index);
 	paint();
@@ -111,6 +119,7 @@ function bindWheel(element: HTMLElement, options: BindOptions) {
 			element.removeEventListener("pointercancel", onPointerCancel);
 			element.removeEventListener("keydown", onKeyDown);
 			element.removeEventListener("wheel", onWheel);
+			reducedMotionQuery.removeEventListener("change", onMotionChange);
 			for (const row of rows) row.remove();
 		},
 	};

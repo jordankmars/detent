@@ -24,6 +24,11 @@ export interface WheelOptions {
 	overscan?: number;
 	/** Called when the item under the center band changes. */
 	onIndexChange?: (index: number) => void;
+	/**
+	 * Jump straight to each item instead of animating. Pass the user's
+	 * `prefers-reduced-motion` setting. Dragging still follows the pointer.
+	 */
+	reducedMotion?: boolean;
 	/** Clock and frame source. Defaults to requestAnimationFrame. */
 	scheduler?: Scheduler;
 }
@@ -98,6 +103,9 @@ export interface Wheel {
 	 */
 	setCount(count: number): void;
 
+	/** Turn animation off or back on, e.g. when the user's preference changes. */
+	setReducedMotion(reduced: boolean): void;
+
 	/** Select an item, either jumping there or animating along the shortest path. */
 	setIndex(index: number, options?: { animate?: boolean }): void;
 
@@ -167,6 +175,7 @@ export function createWheel(options: WheelOptions): Wheel {
 	let drag: Drag | null = null;
 	let scrollTimer = 0;
 	let gesture: ScrollGesture | null = null;
+	let reducedMotion = options.reducedMotion ?? false;
 
 	function normalize(value: number) {
 		return loop ? value : clamp(value, 0, count - 1);
@@ -212,6 +221,7 @@ export function createWheel(options: WheelOptions): Wheel {
 	function settle(to: number, from = 0) {
 		cancelScroll();
 		target = normalize(to);
+		if (reducedMotion) return hold(target);
 		velocity = from;
 		frames.add(tick);
 	}
@@ -351,7 +361,10 @@ export function createWheel(options: WheelOptions): Wheel {
 				next = clamp(next, -SCROLL_OVERSHOOT, count - 1 + SCROLL_OVERSHOOT);
 			}
 			cancelScroll();
-			if (deltaMode === 0 && Math.abs(deltaY) < NOTCH_PIXELS) {
+			if (
+				reducedMotion ||
+				(deltaMode === 0 && Math.abs(deltaY) < NOTCH_PIXELS)
+			) {
 				// Trackpads send a stream of small deltas, then their own momentum.
 				// Following them exactly means the wheel stops where the fingers
 				// do, instead of a spring carrying it on past.
@@ -392,6 +405,11 @@ export function createWheel(options: WheelOptions): Wheel {
 			} else {
 				notify();
 			}
+		},
+
+		setReducedMotion(reduced) {
+			reducedMotion = reduced;
+			if (reduced && frames.has(tick)) hold(target);
 		},
 
 		setIndex(next, { animate = false } = {}) {
