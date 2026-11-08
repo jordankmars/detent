@@ -65,3 +65,23 @@ describe("wheel positions", () => {
 		);
 	});
 });
+
+describe("default appearance", () => {
+	const html = renderToString(
+		<Root value={["a"]} className="mine">
+			<Wheel items={ITEMS} />
+		</Root>,
+	);
+
+	it("draws a center band without any setup", () => {
+		expect(html).toContain("data-detent-band");
+	});
+
+	it("includes its default styles", () => {
+		expect(html).toContain(":where([data-detent-band])");
+	});
+
+	it("passes props through to the element", () => {
+		expect(html).toContain('class="mine"');
+	});
+});

@@ -15,13 +15,17 @@ import {
 	useState,
 } from "react";
 import type { Wheel as Engine } from "../core";
+import { geometry } from "./binding";
 import {
 	RootContext,
 	type RootContextValue,
 	SlotContext,
 	safely,
 } from "./context";
+import { DEFAULT_STYLES } from "./styles";
 import { Wheel } from "./wheel";
+
+const ITEM_HEIGHT = 36;
 
 export interface RootProps<V = string>
 	extends Omit<ComponentPropsWithoutRef<"div">, "defaultValue"> {
@@ -74,6 +78,7 @@ function RootImpl<V>(
 		onValueChange,
 		onValueCommit,
 		disabled = false,
+		style,
 		children,
 		...rest
 	}: RootProps<V>,
@@ -85,11 +90,13 @@ function RootImpl<V>(
 	const latest = useRef<unknown[]>([]);
 	const [engines] = useState(() => new Set<Engine>());
 
+	const { bandHeight } = geometry(ITEM_HEIGHT);
+
 	const context: RootContextValue = {
 		value: controlled ?? uncontrolled,
 		latest,
 		engines,
-		itemHeight: 36,
+		itemHeight: ITEM_HEIGHT,
 		disabled,
 		reducedMotion: false,
 		change(next) {
@@ -103,7 +110,37 @@ function RootImpl<V>(
 
 	return (
 		// biome-ignore lint/a11y/useSemanticElements: a fieldset would bring browser styling and form behavior
-		<div ref={ref} role="group" data-detent-root="" {...rest}>
+		<div
+			ref={ref}
+			role="group"
+			data-detent-root=""
+			data-disabled={disabled ? "" : undefined}
+			{...rest}
+			style={{
+				position: "relative",
+				display: "flex",
+				userSelect: "none",
+				WebkitUserSelect: "none",
+				...style,
+			}}
+		>
+			{/* React 19 hoists this and keeps one copy however many Roots there are. */}
+			<style href="detent" precedence="default">
+				{DEFAULT_STYLES}
+			</style>
+			<div
+				data-detent-band=""
+				aria-hidden
+				style={{
+					position: "absolute",
+					left: 0,
+					right: 0,
+					top: "50%",
+					height: bandHeight,
+					marginTop: -bandHeight / 2,
+					pointerEvents: "none",
+				}}
+			/>
 			<RootContext.Provider value={context}>
 				{assignSlots(children, { slot: 0 })}
 			</RootContext.Provider>
