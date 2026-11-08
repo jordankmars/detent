@@ -4,7 +4,7 @@ import {
 	type Wheel,
 	type WheelSlot,
 } from "../core";
-import { wrap } from "../core/math";
+import { clamp, wrap } from "../core/math";
 import type { RootContextValue } from "./context";
 import type { ItemModel } from "./items";
 
@@ -40,6 +40,13 @@ export interface BindingProps {
 	root: RootContextValue;
 	slot: number;
 	loop: boolean;
+	disabled: boolean;
+}
+
+export interface InitialAria {
+	now: number | undefined;
+	max: number | undefined;
+	text: string | undefined;
 }
 
 export interface InitialRow {
@@ -58,15 +65,18 @@ export interface Binding {
 	props: BindingProps;
 	/** The rows to render first, so server markup matches the first paint. */
 	initialRows(): InitialRow[];
-	/** Starts painting. Returns the cleanup. */
-	connect(): () => void;
+	initialAria(): InitialAria;
+	/** Starts painting and listening. Returns the cleanup. */
+	connect(element: HTMLElement): () => void;
 	paint(): void;
+	/** Runs an input. Returns whether the engine used it. */
+	input(call: () => boolean): boolean;
 }
 
 export function createBinding(
 	initial: BindingProps & { scheduler?: Scheduler },
 ): Binding {
-	const { model, root, slot, loop, scheduler } = initial;
+	const { model, root, slot, loop, disabled, scheduler } = initial;
 	const start = model.indexOf(root.value[slot]);
 
 	const engine = createWheel({
@@ -83,6 +93,45 @@ export function createBinding(
 	const rows: (HTMLElement | null)[] = [];
 	/** The text each row shows, to skip writing what's already there. */
 	const shown: string[] = [];
+	let element: HTMLElement | null = null;
+
+	/** The engine's index, or what it will be once a shrink has caught up. */
+	function currentIndex() {
+		return clamp(engine.index, 0, binding.props.model.labels.length - 1);
+	}
+
+	function ariaState(labels: readonly string[]): InitialAria {
+		if (labels.length === 0) {
+			return { now: undefined, max: undefined, text: undefined };
+		}
+		const now = currentIndex();
+		return { now, max: labels.length - 1, text: labels[now] };
+	}
+
+	function setAttribute(name: string, value: string | number | undefined) {
+		if (value === undefined) element?.removeAttribute(name);
+		else element?.setAttribute(name, String(value));
+	}
+
+	let spoken: InitialAria | null = null;
+	function updateAria() {
+		const next = ariaState(binding.props.model.labels);
+		if (
+			spoken?.now === next.now &&
+			spoken?.max === next.max &&
+			spoken?.text === next.text
+		) {
+			return;
+		}
+		spoken = next;
+		setAttribute("aria-valuenow", next.now);
+		setAttribute("aria-valuemax", next.max);
+		setAttribute("aria-valuetext", next.text);
+	}
+
+	function input(call: () => boolean) {
+		return call();
+	}
 
 	/**
 	 * Which row shows a slot. The engine numbers slots by distance from the
@@ -112,12 +161,13 @@ export function createBinding(
 			row.style.opacity = String(slot.opacity);
 			row.toggleAttribute("data-selected", slot.selected);
 		}
+		updateAria();
 	}
 
 	const binding: Binding = {
 		engine,
 		rows,
-		props: { model, root, slot, loop },
+		props: { model, root, slot, loop, disabled },
 
 		initialRows() {
 			const result: InitialRow[] = [];
@@ -136,19 +186,37 @@ export function createBinding(
 			return result;
 		},
 
-		connect() {
+		initialAria() {
+			return ariaState(model.labels);
+		},
+
+		connect(target) {
+			element = target;
 			const { engines } = binding.props.root;
+			// Native, because React attaches wheel listeners as passive and a
+			// passive listener can't stop the page from scrolling.
+			const onWheel = (event: WheelEvent) => {
+				if (binding.props.disabled) return;
+				if (input(() => engine.scroll(event.deltaY, event.deltaMode))) {
+					event.preventDefault();
+				}
+			};
+			target.addEventListener("wheel", onWheel, { passive: false });
 			const unsubscribe = engine.subscribe(paint);
 			engines.add(engine);
 			paint();
 			return () => {
+				target.removeEventListener("wheel", onWheel);
 				unsubscribe();
 				engines.delete(engine);
 				engine.destroy();
+				element = null;
+				spoken = null;
 			};
 		},
 
 		paint,
+		input,
 	};
 
 	return binding;

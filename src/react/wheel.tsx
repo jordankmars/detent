@@ -4,11 +4,14 @@ import {
 	type ComponentPropsWithoutRef,
 	type CSSProperties,
 	forwardRef,
+	type KeyboardEvent,
 	memo,
+	type PointerEvent,
 	type ReactElement,
 	type Ref,
 	type RefAttributes,
 	useContext,
+	useEffect,
 	useImperativeHandle,
 	useRef,
 	useState,
@@ -38,6 +41,7 @@ export interface WheelProps<T = unknown>
 	items: readonly T[];
 	/** Wrap around from the last item to the first. */
 	loop?: boolean;
+	disabled?: boolean;
 	/** Position in the Root's value. Only needed inside your own component. */
 	index?: number;
 	/** The value reported for an item. Defaults to `item.value`, or the item. */
@@ -104,13 +108,21 @@ function WheelBody<T>({
 	forwardedRef,
 	items,
 	loop = false,
+	disabled: disabledProp = false,
 	index: _index,
 	getValue,
 	getLabel,
 	style,
+	onPointerDown,
+	onPointerMove,
+	onPointerUp,
+	onPointerCancel,
+	onLostPointerCapture,
+	onKeyDown,
 	...rest
 }: WheelBodyProps<T>) {
 	const internal = useContext(InternalContext);
+	const disabled = disabledProp || root.disabled;
 	const modelRef = useRef<ItemModel | null>(null);
 	const model = reconcileItems(modelRef.current, items, getValue, getLabel);
 	modelRef.current = model;
@@ -121,10 +133,13 @@ function WheelBody<T>({
 			root,
 			slot,
 			loop,
+			disabled,
 			scheduler: internal.scheduler,
 		}),
 	);
 	const [initial] = useState(() => binding.initialRows());
+	const [aria] = useState(() => binding.initialAria());
+	const { engine } = binding;
 
 	const element = useRef<HTMLDivElement>(null);
 	useImperativeHandle(
@@ -134,9 +149,66 @@ function WheelBody<T>({
 	);
 
 	useIsomorphicLayoutEffect(() => {
-		binding.props = { model, root, slot, loop };
+		binding.props = { model, root, slot, loop, disabled };
 	});
-	useIsomorphicLayoutEffect(() => binding.connect(), [binding]);
+	useIsomorphicLayoutEffect(
+		() => binding.connect(element.current as HTMLElement),
+		[binding],
+	);
+
+	const activePointer = useRef<number | null>(null);
+
+	useEffect(() => {
+		if (disabled && activePointer.current !== null) {
+			activePointer.current = null;
+			engine.pointerCancel();
+		}
+	}, [disabled, engine]);
+
+	const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+		onPointerDown?.(event);
+		if (
+			event.defaultPrevented ||
+			disabled ||
+			event.button !== 0 ||
+			activePointer.current !== null
+		) {
+			return;
+		}
+		event.currentTarget.setPointerCapture(event.pointerId);
+		activePointer.current = event.pointerId;
+		binding.input(() => {
+			engine.pointerDown(event.clientY);
+			return engine.dragging;
+		});
+	};
+
+	const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+		onPointerMove?.(event);
+		if (event.pointerId === activePointer.current) {
+			engine.pointerMove(event.clientY);
+		}
+	};
+
+	const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
+		onPointerUp?.(event);
+		if (event.pointerId !== activePointer.current) return;
+		activePointer.current = null;
+		const rect = event.currentTarget.getBoundingClientRect();
+		engine.pointerUp(event.clientY - (rect.top + rect.height / 2));
+	};
+
+	const cancelPointer = (event: PointerEvent<HTMLDivElement>) => {
+		if (event.pointerId !== activePointer.current) return;
+		activePointer.current = null;
+		engine.pointerCancel();
+	};
+
+	const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+		onKeyDown?.(event);
+		if (event.defaultPrevented || disabled) return;
+		if (binding.input(() => engine.key(event.key))) event.preventDefault();
+	};
 
 	const { itemHeight } = root;
 	const { wheelHeight, perspective } = geometry(itemHeight);
@@ -145,10 +217,27 @@ function WheelBody<T>({
 		<div
 			ref={element}
 			role="spinbutton"
-			tabIndex={0}
-			aria-valuenow={binding.engine.index}
+			tabIndex={disabled ? -1 : 0}
+			aria-valuemin={aria.max === undefined ? undefined : 0}
+			aria-valuemax={aria.max}
+			aria-valuenow={aria.now}
+			aria-valuetext={aria.text}
+			aria-disabled={disabled || undefined}
 			data-detent-wheel=""
+			data-disabled={disabled ? "" : undefined}
 			{...rest}
+			onPointerDown={handlePointerDown}
+			onPointerMove={handlePointerMove}
+			onPointerUp={handlePointerUp}
+			onPointerCancel={(event) => {
+				onPointerCancel?.(event);
+				cancelPointer(event);
+			}}
+			onLostPointerCapture={(event) => {
+				onLostPointerCapture?.(event);
+				cancelPointer(event);
+			}}
+			onKeyDown={handleKeyDown}
 			style={{
 				position: "relative",
 				height: wheelHeight,
