@@ -31,6 +31,8 @@
 		"build": "tsdown",
 		"dev": "tsdown --watch",
 		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest",
 		"prepack": "pnpm build",
 		"lint": "biome check .",
 		"format": "biome check --write ."
@@ -54,6 +56,7 @@
 		"publint": "^0.3.25",
 		"react": "^19.3.1",
 		"tsdown": "^0.23.7",
-		"typescript": "^7.0.2"
+		"typescript": "^7.0.2",
+		"vitest": "^5.1.0"
 	}
 }
