@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HeroTimePicker } from "@/components/hero-time-picker";
 import { BookIcon, GitHubIcon } from "@/components/icons";
 import { AUTHOR_URL, external, GITHUB_URL } from "@/lib/links";
 
@@ -46,6 +47,9 @@ export default function Home() {
 						<GitHubIcon className="size-[15px]" />
 						GitHub
 					</a>
+				</div>
+				<div className="mt-12">
+					<HeroTimePicker />
 				</div>
 			</div>
 		</main>
