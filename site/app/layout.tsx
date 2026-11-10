@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { SiteHeader } from "@/components/site-header";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
@@ -26,7 +27,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 			suppressHydrationWarning
 		>
 			<body className="flex min-h-dvh flex-col bg-white font-sans text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-				<ThemeProvider>{children}</ThemeProvider>
+				<ThemeProvider>
+					<SiteHeader />
+					{children}
+				</ThemeProvider>
 			</body>
 		</html>
 	);
