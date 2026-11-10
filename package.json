@@ -37,6 +37,8 @@
 		"build": "tsdown",
 		"dev": "tsdown --watch",
 		"play": "vite playground",
+		"site:dev": "pnpm build && pnpm --filter site dev",
+		"site:build": "pnpm build && pnpm --filter site build",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",
 		"test:watch": "vitest",
