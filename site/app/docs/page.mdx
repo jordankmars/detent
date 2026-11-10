@@ -1,0 +1,23 @@
+export const metadata = { title: "Hello World" };
+
+# Hello World
+
+Welcome to the detent docs. detent is the iOS scroll-wheel picker for the web: flick a wheel and it coasts, then settles on an item, for times, dates or any list.
+
+There's more to come. For now, here's a time picker:
+
+```tsx
+import { Detent } from "detent/react";
+
+function TimePicker() {
+	const [time, setTime] = useState(["9", "41", "AM"]);
+
+	return (
+		<Detent.Root value={time} onValueChange={setTime} aria-label="Time">
+			<Detent.Wheel items={hours} loop aria-label="Hour" />
+			<Detent.Wheel items={minutes} loop aria-label="Minute" />
+			<Detent.Wheel items={["AM", "PM"]} aria-label="AM or PM" />
+		</Detent.Root>
+	);
+}
+```

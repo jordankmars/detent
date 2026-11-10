@@ -145,6 +145,36 @@ describe("hydration", () => {
 		container.remove();
 		errors.mockRestore();
 	});
+
+	it("matches when the browser's trig differs from the server's", () => {
+		const errors = vi.spyOn(console, "error");
+		const ui = (
+			<Root value={["c"]}>
+				<Wheel items={LETTERS} loop />
+			</Root>
+		);
+		const container = document.createElement("div");
+		document.body.append(container);
+		container.innerHTML = renderToString(ui);
+		// Engines may disagree in the last bit, as Node and Chrome do.
+		const { sin, cos } = Math;
+		const sinSpy = vi
+			.spyOn(Math, "sin")
+			.mockImplementation((x) => sin(x) * (1 + Number.EPSILON));
+		const cosSpy = vi
+			.spyOn(Math, "cos")
+			.mockImplementation((x) => cos(x) * (1 + Number.EPSILON));
+		let root: ReactRoot | undefined;
+		act(() => {
+			root = hydrateRoot(container, ui);
+		});
+		sinSpy.mockRestore();
+		cosSpy.mockRestore();
+		expect(errors).not.toHaveBeenCalled();
+		act(() => root?.unmount());
+		container.remove();
+		errors.mockRestore();
+	});
 });
 
 function mount(items = LETTERS, value = "c", props = {}) {
