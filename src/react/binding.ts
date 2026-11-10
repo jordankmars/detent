@@ -32,8 +32,14 @@ export function geometry(itemHeight: number) {
 	};
 }
 
+/**
+ * Server and browser can disagree in the last bit of `sin` and `cos`, so style
+ * numbers are rounded well below what's visible, or hydration would mismatch.
+ */
+const round = (n: number) => Math.round(n * 1e4) / 1e4;
+
 function transformOf(slot: WheelSlot) {
-	return `translateY(${slot.y}px) rotateX(${-slot.angle}rad)`;
+	return `translateY(${round(slot.y)}px) rotateX(${round(-slot.angle)}rad)`;
 }
 
 /** What a wheel needs from its latest render. */
@@ -336,7 +342,7 @@ export function createBinding(
 				}
 			}
 			row.style.transform = transformOf(slot);
-			row.style.opacity = String(slot.opacity);
+			row.style.opacity = String(round(slot.opacity));
 			row.toggleAttribute("data-selected", slot.selected);
 		}
 		updateAria();
@@ -369,7 +375,7 @@ export function createBinding(
 					selected: slot.selected,
 					visible: slot.visible,
 					transform: transformOf(slot),
-					opacity: slot.opacity,
+					opacity: round(slot.opacity),
 				};
 			}
 			return result;
