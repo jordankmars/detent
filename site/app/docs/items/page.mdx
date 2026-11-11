@@ -1,0 +1,39 @@
+import { Example } from "@/components/example";
+
+export const metadata = { title: "Items" };
+
+# Items
+
+<Lead>Put anything on a wheel.</Lead>
+
+A wheel reports a value for each item and shows a label for it. For strings and numbers, those are the item itself.
+
+```tsx
+<Detent.Wheel items={["AM", "PM"]} />
+```
+
+## Values and labels
+
+Pass `{ value, label }` to show one thing and report another. Here the wheel shows a month's name and reports its number.
+
+<Example name="month-picker" />
+
+## Your own data
+
+If your items have other names for those fields, read them with `getValue` and `getLabel`.
+
+```tsx
+<Detent.Wheel
+	items={countries}
+	getValue={(country) => country.code}
+	getLabel={(country) => country.name}
+/>
+```
+
+## Custom rows
+
+`renderItem` draws a row's content. `getLabel` still provides the spoken text.
+
+<Example name="country-picker" />
+
+Without `renderItem`, rows are updated outside React and motion costs no renders. With it, keep the function stable, with `useCallback` or at module scope, so rows only render when their item changes.

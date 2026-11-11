@@ -6,6 +6,10 @@ export const SECTIONS = [
 			{ title: "API", href: "/docs/api" },
 		],
 	},
+	{
+		title: "Guides",
+		pages: [{ title: "Items", href: "/docs/items" }],
+	},
 ];
 
 export const DOCS = SECTIONS.flatMap((section) => section.pages);
