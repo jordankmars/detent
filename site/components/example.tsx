@@ -4,6 +4,7 @@ import { highlight } from "@/lib/highlight";
 import { ExampleTabs } from "./example-tabs";
 import { CountryPicker } from "./examples/country-picker";
 import { DatePicker } from "./examples/date-picker";
+import { LargeList } from "./examples/large-list";
 import { MonthPicker } from "./examples/month-picker";
 import { StyleBrutalist } from "./examples/style-brutalist";
 import { StyleGlass } from "./examples/style-glass";
@@ -15,6 +16,7 @@ import { TimePicker } from "./examples/time-picker";
 const DEMOS = {
 	"country-picker": CountryPicker,
 	"date-picker": DatePicker,
+	"large-list": LargeList,
 	"month-picker": MonthPicker,
 	"style-brutalist": StyleBrutalist,
 	"style-glass": StyleGlass,

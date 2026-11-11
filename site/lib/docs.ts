@@ -18,6 +18,7 @@ export const SECTIONS = [
 		title: "Examples",
 		pages: [
 			{ title: "Dates and Times", href: "/docs/examples/dates-and-times" },
+			{ title: "Lists", href: "/docs/examples/lists" },
 		],
 	},
 ];
