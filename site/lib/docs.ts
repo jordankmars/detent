@@ -8,7 +8,10 @@ export const SECTIONS = [
 	},
 	{
 		title: "Guides",
-		pages: [{ title: "Items", href: "/docs/items" }],
+		pages: [
+			{ title: "Items", href: "/docs/items" },
+			{ title: "Linked Wheels", href: "/docs/linked-wheels" },
+		],
 	},
 ];
 

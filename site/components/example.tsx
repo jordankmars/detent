@@ -3,11 +3,13 @@ import { join } from "node:path";
 import { highlight } from "@/lib/highlight";
 import { ExampleTabs } from "./example-tabs";
 import { CountryPicker } from "./examples/country-picker";
+import { DatePicker } from "./examples/date-picker";
 import { MonthPicker } from "./examples/month-picker";
 import { TimePicker } from "./examples/time-picker";
 
 const DEMOS = {
 	"country-picker": CountryPicker,
+	"date-picker": DatePicker,
 	"month-picker": MonthPicker,
 	"time-picker": TimePicker,
 };

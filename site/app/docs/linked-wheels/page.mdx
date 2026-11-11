@@ -1,0 +1,40 @@
+import { Example } from "@/components/example";
+
+export const metadata = { title: "Linked Wheels" };
+
+# Linked Wheels
+
+<Lead>Let one wheel's items follow another's value.</Lead>
+
+It starts on January 31st. Move the month to February.
+
+<Example name="date-picker" />
+
+## How it works
+
+Derive the items from the value. If the selected item disappears, the wheel moves to the nearest one and reports it through `onValueChange`.
+
+```tsx
+const [month, , year] = date;
+const days = useMemo(() => daysIn(month, year), [month, year]);
+
+<Detent.Root value={date} onValueChange={setDate}>
+	<Detent.Wheel items={months} />
+	<Detent.Wheel items={days} />
+	<Detent.Wheel items={years} />
+</Detent.Root>;
+```
+
+## Controlled values
+
+A controlled wheel follows its parent. Changing `value` animates to the new item, and if the parent ignores or alters a change, the wheel moves to match when it comes to rest.
+
+## Change and commit
+
+`onValueChange` runs as a wheel crosses each item, which suits a live readout. For anything heavier, like saving, use `onValueCommit`, which waits until a change made by the user comes to rest.
+
+```tsx
+<Detent.Root value={date} onValueChange={setDate} onValueCommit={save}>
+	{/* ... */}
+</Detent.Root>
+```
