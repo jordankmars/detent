@@ -1,7 +1,10 @@
 export const SECTIONS = [
 	{
 		title: "Basics",
-		pages: [{ title: "Getting Started", href: "/docs" }],
+		pages: [
+			{ title: "Getting Started", href: "/docs" },
+			{ title: "API", href: "/docs/api" },
+		],
 	},
 ];
 
