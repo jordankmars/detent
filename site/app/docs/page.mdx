@@ -1,15 +1,37 @@
-export const metadata = { title: "Hello World" };
+import { Example } from "@/components/example";
 
-# Hello World
+export const metadata = { title: "Getting Started" };
 
-Welcome to the detent docs. detent is the iOS scroll-wheel picker for the web: flick a wheel and it coasts, then settles on an item, for times, dates or any list.
+# Getting Started
 
-There's more to come. For now, here's a time picker:
+<Lead>The iOS scroll-wheel picker for the web.</Lead>
+
+Flick a wheel and it coasts, then snaps to an item. It's for times, dates or any list, and works with drag, trackpad, mouse wheel and keyboard.
+
+<Example name="time-picker" />
+
+## Installation
+
+Install the package from your command line.
+
+<Install />
+
+## Create a picker
+
+Compose the parts. Each wheel holds one position in the Root's value.
+
+<CodeFile name="time-picker.tsx">
 
 ```tsx
 import { Detent } from "detent/react";
+import { useState } from "react";
 
-function TimePicker() {
+const hours = Array.from({ length: 12 }, (_, i) => String(i + 1));
+const minutes = Array.from({ length: 60 }, (_, i) =>
+	String(i).padStart(2, "0"),
+);
+
+export function TimePicker() {
 	const [time, setTime] = useState(["9", "41", "AM"]);
 
 	return (
@@ -21,3 +43,17 @@ function TimePicker() {
 	);
 }
 ```
+
+</CodeFile>
+
+## Style it
+
+There's no stylesheet to import. detent renders the cylinder and center band as is, and inherits color and font from the page. Set a variable to change the look.
+
+```tsx
+<Detent.Root className="[--detent-band-radius:12px]">
+	{/* ... */}
+</Detent.Root>
+```
+
+The row at the center has `data-selected` to style against. See [Styling](/docs/styling) for the rest.
