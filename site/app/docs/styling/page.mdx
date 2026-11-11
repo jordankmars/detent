@@ -1,0 +1,70 @@
+import { Example } from "@/components/example";
+
+export const metadata = { title: "Styling" };
+
+# Styling
+
+<Lead>The same parts, in any look.</Lead>
+
+detent has a default look and no stylesheet to import. Set its variables, or style its parts with your own CSS. Here's one picker in five styles.
+
+## Site
+
+The look of this site. A neutral band, wider than the wheels, with muted rows around it.
+
+<Example name="style-site" />
+
+## Glass
+
+A translucent band with `backdrop-blur`. It needs something colorful behind it.
+
+<Example name="style-glass" />
+
+## Neobrutalist
+
+A thick border and a hard offset shadow, added straight onto the band.
+
+<Example name="style-brutalist" />
+
+## Terminal
+
+Monospace and sharp corners. Font family is inherited, so set it on the Root.
+
+<Example name="style-terminal" />
+
+## Soft
+
+A fully rounded band with a wide, diffuse shadow.
+
+<Example name="style-soft" />
+
+## Variables
+
+Set these on the Root or any parent.
+
+| Variable | Default |
+| --- | --- |
+| `--detent-gap` | `2px` |
+| `--detent-band-background` | `currentColor` at 9% |
+| `--detent-band-radius` | `10px` |
+| `--detent-band-inset` | `0` |
+| `--detent-wheel-flex` | `1 1 0` |
+| `--detent-item-font-size` | `21px` |
+| `--detent-item-color` | `currentColor` at 55% |
+| `--detent-disabled-opacity` | `0.5` |
+
+## Parts
+
+The parts are `data-detent-root`, `data-detent-band`, `data-detent-wheel` and `data-detent-item`, plus `data-selected` and `data-disabled`. The default styles have no specificity, so any CSS you write wins.
+
+```css
+[data-detent-band] { background: white; border-radius: 12px; }
+[data-detent-wheel] { flex: none; width: 64px; }
+[data-detent-item] { color: gray; font-size: 18px; }
+[data-detent-item][data-selected] { color: black; }
+```
+
+## Good to know
+
+- Cascade layers, including Tailwind's utilities, can't beat the defaults on the same property. Set a variable instead, like `[--detent-band-background:white]`.
+- Properties detent doesn't set, like a border or shadow, work as usual.

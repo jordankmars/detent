@@ -1,0 +1,83 @@
+export const metadata = { title: "API" };
+
+# API
+
+<Lead>The parts of detent and the props they take.</Lead>
+
+## Anatomy
+
+Import `Detent` and put the parts together.
+
+```tsx
+import { Detent } from "detent/react";
+
+<Detent.Root>
+	<Detent.Wheel items={items} />
+</Detent.Root>;
+```
+
+## Components
+
+Both parts forward a ref and any other props to their `div`.
+
+### Root
+
+Holds the value of every wheel and draws the center band.
+
+| Prop | Type | Default |
+| --- | --- | --- |
+| `value` | `V[]` | - |
+| `defaultValue` | `V[]` | - |
+| `onValueChange` | `(value: V[]) => void` | - |
+| `onValueCommit` | `(value: V[]) => void` | - |
+| `disabled` | `boolean` | `false` |
+| `itemHeight` | `number` | `36` |
+| `reducedMotion` | `boolean` | The user's setting |
+
+`onValueChange` runs as a wheel crosses each item. `onValueCommit` runs when a change made by the user comes to rest.
+
+`itemHeight` is in pixels, and everything else scales with it.
+
+### Wheel
+
+One column of items. It has to be inside a Root.
+
+| Prop | Type | Default |
+| --- | --- | --- |
+| `items` | `T[]` | Required |
+| `loop` | `boolean` | `false` |
+| `disabled` | `boolean` | `false` |
+| `getValue` | `(item: T) => unknown` | `item.value`, or the item |
+| `getLabel` | `(item: T) => string` | `item.label`, or the value |
+| `renderItem` | `(item: T, index: number) => ReactNode` | - |
+| `index` | `number` | Its order in the Root |
+
+See [Items](/docs/items) for what a wheel can hold.
+
+## Wheel positions
+
+A wheel's position is its order among the Root's wheels, looking through fragments and plain elements. Separators don't count.
+
+A wheel inside your own component can't be seen from the Root, so give it an `index`. The same goes for a wheel whose parent is a server component. Pass `index` to every wheel if you pass it to one.
+
+## Keyboard
+
+A focused wheel takes these keys.
+
+| Key | Action |
+| --- | --- |
+| `ArrowUp`, `ArrowDown` | Moves one item |
+| `PageUp`, `PageDown` | Moves five items |
+| `Home`, `End` | Moves to the first or last item, unless it loops |
+
+## Accessibility
+
+Each wheel is a `spinbutton` that speaks its item's label, and the Root is a `group`. Give each of them an `aria-label`, since it's what a screen reader announces.
+
+## Good to know
+
+- Only eleven rows are ever rendered, so a list of ten thousand costs the same as a list of ten.
+- A wheel at its end lets the page scroll instead of trapping it.
+- Wheels can take focus, but detent ships no focus styles.
+- With reduced motion, wheels go straight to an item.
+- Avoid updating `value` inside `startTransition`, or the wheel can snap back before the update lands.

@@ -15,7 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "Detent",
+	title: { default: "Detent", template: "%s · Detent" },
 	description: "iOS scroll-wheel picker for the web.",
 };
 
