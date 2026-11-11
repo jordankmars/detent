@@ -15,4 +15,9 @@ const nextConfig: NextConfig = {
 	},
 };
 
-export default createMDX()(nextConfig);
+export default createMDX({
+	options: {
+		remarkPlugins: ["remark-gfm"],
+		rehypePlugins: ["rehype-slug"],
+	},
+})(nextConfig);
