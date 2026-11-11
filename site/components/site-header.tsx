@@ -6,8 +6,8 @@ import { ThemeToggle } from "./theme-toggle";
 
 export function SiteHeader() {
 	return (
-		<header>
-			<div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
+		<header className="sticky top-0 z-50 border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
+			<div className="mx-auto flex h-14 max-w-[1400px] items-center justify-between px-4 sm:px-6">
 				<Link href="/" className="text-lg font-semibold tracking-tight">
 					Detent
 				</Link>
