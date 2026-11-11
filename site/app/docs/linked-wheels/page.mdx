@@ -16,7 +16,7 @@ Derive the items from the value. If the selected item disappears, the wheel move
 
 ```tsx
 const [month, , year] = date;
-const days = useMemo(() => daysIn(month, year), [month, year]);
+const days = useMemo(() => listDays(month, year), [month, year]);
 
 <Detent.Root value={date} onValueChange={setDate}>
 	<Detent.Wheel items={months} />
