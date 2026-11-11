@@ -5,12 +5,22 @@ import { ExampleTabs } from "./example-tabs";
 import { CountryPicker } from "./examples/country-picker";
 import { DatePicker } from "./examples/date-picker";
 import { MonthPicker } from "./examples/month-picker";
+import { StyleBrutalist } from "./examples/style-brutalist";
+import { StyleGlass } from "./examples/style-glass";
+import { StyleSite } from "./examples/style-site";
+import { StyleSoft } from "./examples/style-soft";
+import { StyleTerminal } from "./examples/style-terminal";
 import { TimePicker } from "./examples/time-picker";
 
 const DEMOS = {
 	"country-picker": CountryPicker,
 	"date-picker": DatePicker,
 	"month-picker": MonthPicker,
+	"style-brutalist": StyleBrutalist,
+	"style-glass": StyleGlass,
+	"style-site": StyleSite,
+	"style-soft": StyleSoft,
+	"style-terminal": StyleTerminal,
 	"time-picker": TimePicker,
 };
 
