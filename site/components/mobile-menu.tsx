@@ -38,7 +38,7 @@ export function MobileMenu() {
 				ref={dialog}
 				aria-label="Menu"
 				onClick={onBackdrop}
-				className="fixed top-2 left-2 m-0 max-h-[calc(100dvh-24px)] w-[calc(100vw-16px)] max-w-none overflow-y-auto rounded-2xl border border-neutral-200 bg-white text-inherit backdrop:bg-black/30 dark:border-neutral-800 dark:bg-neutral-950"
+				className="fixed top-3 left-2 m-0 max-h-[calc(100dvh-24px)] w-[calc(100vw-16px)] max-w-none overflow-y-auto rounded-2xl border border-neutral-200 bg-white text-inherit backdrop:bg-black/30 dark:border-neutral-800 dark:bg-neutral-950"
 			>
 				<div className="p-2">
 					<div className="flex items-center justify-between">
