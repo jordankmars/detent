@@ -11,13 +11,13 @@
 		"scroll-wheel",
 		"ios"
 	],
-	"homepage": "https://github.com/jordankmars/detent#readme",
+	"homepage": "https://github.com/jordankmars/tambour#readme",
 	"bugs": {
-		"url": "https://github.com/jordankmars/detent/issues"
+		"url": "https://github.com/jordankmars/tambour/issues"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/jordankmars/detent.git"
+		"url": "git+https://github.com/jordankmars/tambour.git"
 	},
 	"author": "Jordan Mars",
 	"license": "MIT",

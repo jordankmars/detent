@@ -1,6 +1,6 @@
 # tambour
 
-[![CI](https://github.com/jordankmars/detent/actions/workflows/ci.yml/badge.svg)](https://github.com/jordankmars/detent/actions/workflows/ci.yml)
+[![CI](https://github.com/jordankmars/tambour/actions/workflows/ci.yml/badge.svg)](https://github.com/jordankmars/tambour/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 The iOS scroll-wheel picker for the web, for times, dates or any list.
