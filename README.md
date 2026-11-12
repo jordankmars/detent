@@ -15,7 +15,13 @@ The iOS scroll-wheel picker for the web, for times, dates or any list.
 </Detent.Root>
 ```
 
-> **Status:** early development, not published yet.
+## Install
+
+```sh
+npm install detent
+```
+
+Needs React 18 or later.
 
 ## What it does
 

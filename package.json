@@ -1,6 +1,6 @@
 {
 	"name": "detent",
-	"version": "0.0.0",
+	"version": "1.0.0",
 	"description": "The iOS scroll-wheel picker for the web, for times, dates or any list.",
 	"keywords": [
 		"react",
