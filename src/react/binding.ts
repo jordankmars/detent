@@ -21,7 +21,7 @@ const BASE_WHEEL_HEIGHT = 224;
 const BASE_PERSPECTIVE = 900;
 const BASE_BAND_HEIGHT = 38;
 
-/** Scales the approved geometry to an item height, in pixels. */
+/** Scales the base geometry to an item height, in pixels. */
 export function geometry(itemHeight: number) {
 	const scale = itemHeight / BASE_ITEM_HEIGHT;
 	return {

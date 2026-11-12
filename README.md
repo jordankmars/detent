@@ -1,5 +1,8 @@
 # detent
 
+[![CI](https://github.com/jordankmars/detent/actions/workflows/ci.yml/badge.svg)](https://github.com/jordankmars/detent/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+
 The iOS scroll-wheel picker for the web, for times, dates or any list.
 
 ```tsx
@@ -50,27 +53,27 @@ inherits color and font from the page.
 
 ### `Detent.Root`
 
-| Prop            | Type                 | Description                                                      |
-| --------------- | -------------------- | ---------------------------------------------------------------- |
-| `value`         | `V[]`                | The value of each wheel, in the order the wheels appear.         |
-| `defaultValue`  | `V[]`                | Starting values when `value` isn't controlled.                   |
-| `onValueChange` | `(value: V[]) => void` | Called as a wheel crosses each item.                           |
-| `onValueCommit` | `(value: V[]) => void` | Called when a change made by the user comes to rest.           |
-| `disabled`      | `boolean`            | Disables every wheel.                                            |
-| `itemHeight`    | `number`             | Height of one item in pixels, default 36. Everything scales with it. |
-| `reducedMotion` | `boolean`            | Overrides the user's `prefers-reduced-motion` setting.           |
+| Prop            | Type                   | Description                                                          |
+| --------------- | ---------------------- | -------------------------------------------------------------------- |
+| `value`         | `V[]`                  | The value of each wheel, in the order the wheels appear.             |
+| `defaultValue`  | `V[]`                  | Starting values when `value` isn't controlled.                       |
+| `onValueChange` | `(value: V[]) => void` | Called as a wheel crosses each item.                                 |
+| `onValueCommit` | `(value: V[]) => void` | Called when a change made by the user comes to rest.                 |
+| `disabled`      | `boolean`              | Disables every wheel.                                                |
+| `itemHeight`    | `number`               | Height of one item in pixels, default 36. Everything scales with it. |
+| `reducedMotion` | `boolean`              | Overrides the user's `prefers-reduced-motion` setting.               |
 
 ### `Detent.Wheel`
 
-| Prop         | Type                             | Description                                                      |
-| ------------ | -------------------------------- | ---------------------------------------------------------------- |
-| `items`      | `T[]`                            | Strings, numbers, `{ value, label }`, or anything with the readers below. |
-| `loop`       | `boolean`                        | Wrap around from the last item to the first.                     |
-| `disabled`   | `boolean`                        | Disables this wheel.                                             |
-| `getValue`   | `(item: T) => unknown`           | The value reported for an item. Defaults to `item.value`, or the item. |
-| `getLabel`   | `(item: T) => string`            | The text shown and spoken. Defaults to `item.label`, or the value. |
-| `renderItem` | `(item: T, index: number) => ReactNode` | Custom row content. `getLabel` still provides the spoken text. |
-| `index`      | `number`                         | Position in the Root's value. See below.                         |
+| Prop         | Type                                    | Description                                                               |
+| ------------ | --------------------------------------- | ------------------------------------------------------------------------- |
+| `items`      | `T[]`                                   | Strings, numbers, `{ value, label }`, or anything with the readers below. |
+| `loop`       | `boolean`                               | Wrap around from the last item to the first.                              |
+| `disabled`   | `boolean`                               | Disables this wheel.                                                      |
+| `getValue`   | `(item: T) => unknown`                  | The value reported for an item. Defaults to `item.value`, or the item.    |
+| `getLabel`   | `(item: T) => string`                   | The text shown and spoken. Defaults to `item.label`, or the value.        |
+| `renderItem` | `(item: T, index: number) => ReactNode` | Custom row content. `getLabel` still provides the spoken text.            |
+| `index`      | `number`                                | Position in the Root's value. See below.                                  |
 
 Both components forward a ref and any other props to their `div`. Give each
 wheel an `aria-label`, since it's what a screen reader announces.
@@ -126,16 +129,16 @@ Cascade layers, including Tailwind's utilities, can't beat those defaults on
 the same property. Set a variable instead, for example
 `[--detent-band-background:white]`:
 
-| Variable                   | Default                    |
-| -------------------------- | -------------------------- |
-| `--detent-gap`             | `2px`                      |
-| `--detent-band-background` | `currentColor` at 9%       |
-| `--detent-band-radius`     | `10px`                     |
-| `--detent-band-inset`      | `0`                        |
-| `--detent-wheel-flex`      | `1 1 0`                    |
-| `--detent-item-font-size`  | `21px`                     |
-| `--detent-item-color`      | `currentColor` at 55%      |
-| `--detent-disabled-opacity` | `0.5`                     |
+| Variable                    | Default               |
+| --------------------------- | --------------------- |
+| `--detent-gap`              | `2px`                 |
+| `--detent-band-background`  | `currentColor` at 9%  |
+| `--detent-band-radius`      | `10px`                |
+| `--detent-band-inset`       | `0`                   |
+| `--detent-wheel-flex`       | `1 1 0`               |
+| `--detent-item-font-size`   | `21px`                |
+| `--detent-item-color`       | `currentColor` at 55% |
+| `--detent-disabled-opacity` | `0.5`                 |
 
 ## How it's built
 
@@ -145,17 +148,20 @@ layout for each visible row. Framework adapters bind events and paint rows.
 That keeps the engine easy to test and lets each adapter render however it
 likes.
 
-| Framework | Import path     | Status      |
-| --------- | --------------- | ----------- |
-| React     | `detent/react`  | Ready       |
-| Vue       | `detent/vue`    | Planned     |
-| Svelte    | `detent/svelte` | Planned     |
+| Framework | Import path     | Status  |
+| --------- | --------------- | ------- |
+| React     | `detent/react`  | Ready   |
+| Vue       | `detent/vue`    | Planned |
+| Svelte    | `detent/svelte` | Planned |
 
 ## Development
+
+Needs Node 20 or later and pnpm.
 
 ```sh
 pnpm install
 pnpm play        # playground at http://localhost:5173
+pnpm site:dev    # docs site at http://localhost:3000
 pnpm test        # unit tests
 pnpm typecheck
 pnpm lint
@@ -164,6 +170,13 @@ pnpm build
 
 The playground (`playground/main.tsx`) runs the React adapter and shows live
 engine state for every wheel. It's the quickest way to try out a change.
+
+```
+src/core     engine: physics, input and layout, no DOM
+src/react    React adapter, published as detent/react
+playground   Vite app for trying changes by hand
+site         docs site, Next.js exported to static files
+```
 
 ## Contributing
 

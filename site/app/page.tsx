@@ -3,7 +3,6 @@ import { HeroTimePicker } from "@/components/hero-time-picker";
 import { BookIcon, GitHubIcon } from "@/components/icons";
 import { AUTHOR_URL, external, GITHUB_URL } from "@/lib/links";
 
-// Sized like the trigger on eclose's site: 40px tall, 14px medium text.
 const button =
 	"flex h-10 items-center gap-2 rounded-xl px-4 text-[14px]/[1.5] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-400";
 

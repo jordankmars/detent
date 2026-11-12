@@ -12,7 +12,7 @@ import type { Wheel as Engine } from "../src/core";
 import { Detent } from "../src/react";
 import { InternalContext } from "../src/react/context";
 
-// ---------- Engine access for the debug panel ----------
+// Engine access for the debug panel
 
 /** Every live engine, with the element that names it. */
 const registry = new Map<Engine, HTMLElement>();
@@ -28,7 +28,7 @@ const internal = {
 
 const ReducedMotionContext = createContext(false);
 
-// ---------- Demos ----------
+// Demos
 
 const range = (length: number, from = 0, pad = 0) =>
 	Array.from({ length }, (_, i) => String(i + from).padStart(pad, "0"));
@@ -340,7 +340,7 @@ function DebugPanel({
 	);
 }
 
-// ---------- Page ----------
+// Page
 
 const styles = `
 :root {
