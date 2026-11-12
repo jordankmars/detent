@@ -5,6 +5,8 @@
 
 The iOS scroll-wheel picker for the web, for times, dates or any list.
 
+<img src=".github/demo.gif" width="400" height="240" alt="A time picker with hour, minute and AM/PM wheels. The hour and minute wheels are flicked, coast and snap to an item, then AM is dragged to PM.">
+
 ```tsx
 <Detent.Root value={time} onValueChange={setTime}>
   <Detent.Wheel items={hours} loop />
