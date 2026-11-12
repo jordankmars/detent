@@ -98,7 +98,7 @@ const Row = memo(function Row({
 			ref={(element) => {
 				binding.rows[ring] = element;
 			}}
-			data-detent-item=""
+			data-tambour-item=""
 			data-selected={initial.selected ? "" : undefined}
 			aria-hidden
 			style={style}
@@ -284,7 +284,7 @@ function WheelBody<T>({
 			aria-valuenow={aria.now}
 			aria-valuetext={aria.text}
 			aria-disabled={disabled || undefined}
-			data-detent-wheel=""
+			data-tambour-wheel=""
 			data-disabled={disabled ? "" : undefined}
 			{...rest}
 			onPointerDown={handlePointerDown}
@@ -332,11 +332,11 @@ function WheelBody<T>({
 function WheelImpl<T>(props: WheelProps<T>, ref: Ref<HTMLDivElement>) {
 	const root = useContext(RootContext);
 	const assigned = useContext(SlotContext);
-	if (!root) throw new Error("Detent.Wheel must be inside Detent.Root.");
+	if (!root) throw new Error("Tambour.Wheel must be inside Tambour.Root.");
 	const slot = props.index ?? assigned;
 	if (slot === undefined) {
 		throw new Error(
-			"Detent.Wheel can't find its position. Pass an `index` prop when " +
+			"Tambour.Wheel can't find its position. Pass an `index` prop when " +
 				"rendering it inside your own component.",
 		);
 	}

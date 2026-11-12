@@ -61,7 +61,7 @@ describe("wheel positions", () => {
 
 	it("requires a Root", () => {
 		expect(() => renderToString(<Wheel items={ITEMS} />)).toThrow(
-			/inside Detent.Root/,
+			/inside Tambour.Root/,
 		);
 	});
 });
@@ -74,11 +74,11 @@ describe("default appearance", () => {
 	);
 
 	it("draws a center band without any setup", () => {
-		expect(html).toContain("data-detent-band");
+		expect(html).toContain("data-tambour-band");
 	});
 
 	it("includes its default styles", () => {
-		expect(html).toContain(":where([data-detent-band])");
+		expect(html).toContain(":where([data-tambour-band])");
 	});
 
 	it("passes props through to the element", () => {

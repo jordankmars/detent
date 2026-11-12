@@ -18,11 +18,11 @@ Derive the items from the value. If the selected item disappears, the wheel move
 const [month, , year] = date;
 const days = useMemo(() => listDays(month, year), [month, year]);
 
-<Detent.Root value={date} onValueChange={setDate}>
-	<Detent.Wheel items={months} />
-	<Detent.Wheel items={days} />
-	<Detent.Wheel items={years} />
-</Detent.Root>;
+<Tambour.Root value={date} onValueChange={setDate}>
+	<Tambour.Wheel items={months} />
+	<Tambour.Wheel items={days} />
+	<Tambour.Wheel items={years} />
+</Tambour.Root>;
 ```
 
 ## Controlled values
@@ -34,7 +34,7 @@ A controlled wheel follows its parent. Changing `value` animates to the new item
 `onValueChange` runs as a wheel crosses each item, which suits a live readout. For anything heavier, like saving, use `onValueCommit`, which waits until a change made by the user comes to rest.
 
 ```tsx
-<Detent.Root value={date} onValueChange={setDate} onValueCommit={save}>
+<Tambour.Root value={date} onValueChange={setDate} onValueCommit={save}>
 	{/* ... */}
-</Detent.Root>
+</Tambour.Root>
 ```

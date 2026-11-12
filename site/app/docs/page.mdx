@@ -23,7 +23,7 @@ Compose the parts. Each wheel holds one position in the Root's value.
 <CodeFile name="time-picker.tsx">
 
 ```tsx
-import { Detent } from "detent/react";
+import { Tambour } from "tambour/react";
 import { useState } from "react";
 
 const hours = Array.from({ length: 12 }, (_, i) => String(i + 1));
@@ -35,11 +35,11 @@ export function TimePicker() {
 	const [time, setTime] = useState(["9", "41", "AM"]);
 
 	return (
-		<Detent.Root value={time} onValueChange={setTime} aria-label="Time">
-			<Detent.Wheel items={hours} loop aria-label="Hour" />
-			<Detent.Wheel items={minutes} loop aria-label="Minute" />
-			<Detent.Wheel items={["AM", "PM"]} aria-label="AM or PM" />
-		</Detent.Root>
+		<Tambour.Root value={time} onValueChange={setTime} aria-label="Time">
+			<Tambour.Wheel items={hours} loop aria-label="Hour" />
+			<Tambour.Wheel items={minutes} loop aria-label="Minute" />
+			<Tambour.Wheel items={["AM", "PM"]} aria-label="AM or PM" />
+		</Tambour.Root>
 	);
 }
 ```
@@ -48,12 +48,12 @@ export function TimePicker() {
 
 ## Style it
 
-There's no stylesheet to import. detent renders the cylinder and center band as is, and inherits color and font from the page. Set a variable to change the look.
+There's no stylesheet to import. tambour renders the cylinder and center band as is, and inherits color and font from the page. Set a variable to change the look.
 
 ```tsx
-<Detent.Root className="[--detent-band-radius:12px]">
+<Tambour.Root className="[--tambour-band-radius:12px]">
 	{/* ... */}
-</Detent.Root>
+</Tambour.Root>
 ```
 
 The row at the center has `data-selected` to style against. See [Styling](/docs/styling) for the rest.

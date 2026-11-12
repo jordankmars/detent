@@ -119,7 +119,7 @@ function RootImpl<V>(
 		<div
 			ref={ref}
 			role="group"
-			data-detent-root=""
+			data-tambour-root=""
 			data-disabled={disabled ? "" : undefined}
 			{...rest}
 			style={{
@@ -131,11 +131,11 @@ function RootImpl<V>(
 			}}
 		>
 			{/* React 19 hoists this and keeps one copy however many Roots there are. */}
-			<style href="detent" precedence="default">
+			<style href="tambour" precedence="default">
 				{DEFAULT_STYLES}
 			</style>
 			<div
-				data-detent-band=""
+				data-tambour-band=""
 				aria-hidden
 				style={{
 					position: "absolute",

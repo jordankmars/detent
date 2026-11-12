@@ -1,6 +1,6 @@
-# detent site
+# tambour site
 
-The docs site for detent: Next.js, statically exported, hosted on Cloudflare.
+The docs site for tambour: Next.js, statically exported, hosted on Cloudflare.
 
 ```sh
 pnpm site:dev    # from the repo root, builds the library first

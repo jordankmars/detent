@@ -1,7 +1,7 @@
 "use client";
 
-import { Detent } from "detent/react";
 import { useState } from "react";
+import { Tambour } from "tambour/react";
 
 const months = [
 	{ value: 0, label: "January" },
@@ -26,19 +26,19 @@ export function MonthPicker() {
 			<output className="absolute inset-x-0 top-4 text-center font-mono text-xs text-neutral-500 dark:text-neutral-400">
 				value: {value[0]}
 			</output>
-			<Detent.Root
+			<Tambour.Root
 				aria-label="Month"
 				value={value}
 				onValueChange={setValue}
-				className="[--detent-band-background:var(--color-neutral-100)] [--detent-band-inset:-10px] [--detent-item-color:var(--color-neutral-400)] dark:[--detent-band-background:var(--color-neutral-800)] dark:[--detent-item-color:var(--color-neutral-500)]"
+				className="[--tambour-band-background:var(--color-neutral-100)] [--tambour-band-inset:-10px] [--tambour-item-color:var(--color-neutral-400)] dark:[--tambour-band-background:var(--color-neutral-800)] dark:[--tambour-item-color:var(--color-neutral-500)]"
 			>
-				<Detent.Wheel
-					className="w-40 [--detent-wheel-flex:none]"
+				<Tambour.Wheel
+					className="w-40 [--tambour-wheel-flex:none]"
 					items={months}
 					loop
 					aria-label="Month"
 				/>
-			</Detent.Root>
+			</Tambour.Root>
 		</>
 	);
 }

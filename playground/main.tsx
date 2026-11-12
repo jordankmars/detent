@@ -9,7 +9,7 @@ import {
 } from "react";
 import { createRoot } from "react-dom/client";
 import type { Wheel as Engine } from "../src/core";
-import { Detent } from "../src/react";
+import { Tambour } from "../src/react";
 import { InternalContext } from "../src/react/context";
 
 // Engine access for the debug panel
@@ -52,31 +52,31 @@ function TimePicker() {
 				<output className="readout">
 					{hour}:{minute} {period}
 				</output>
-				<Detent.Root
+				<Tambour.Root
 					className="picker"
 					aria-label="Time"
 					value={value}
 					onValueChange={setValue}
 					reducedMotion={reducedMotion}
 				>
-					<Detent.Wheel
+					<Tambour.Wheel
 						className="column"
 						items={HOURS}
 						loop
 						aria-label="Hour"
 					/>
-					<Detent.Wheel
+					<Tambour.Wheel
 						className="column"
 						items={MINUTES}
 						loop
 						aria-label="Minute"
 					/>
-					<Detent.Wheel
+					<Tambour.Wheel
 						className="column"
 						items={PERIODS}
 						aria-label="AM or PM"
 					/>
-				</Detent.Root>
+				</Tambour.Root>
 			</div>
 		</section>
 	);
@@ -133,26 +133,31 @@ function DatePicker() {
 						year: "numeric",
 					})}
 				</output>
-				<Detent.Root
+				<Tambour.Root
 					className="picker"
 					aria-label="Date"
 					value={value}
 					onValueChange={setValue}
 					reducedMotion={reducedMotion}
 				>
-					<Detent.Wheel
+					<Tambour.Wheel
 						className="column"
 						items={MONTHS}
 						loop
 						aria-label="Month"
 					/>
-					<Detent.Wheel className="column" items={days} loop aria-label="Day" />
-					<Detent.Wheel
+					<Tambour.Wheel
+						className="column"
+						items={days}
+						loop
+						aria-label="Day"
+					/>
+					<Tambour.Wheel
 						className="column wide"
 						items={YEARS}
 						aria-label="Year"
 					/>
-				</Detent.Root>
+				</Tambour.Root>
 			</div>
 		</section>
 	);
@@ -178,20 +183,20 @@ function LargeList() {
 			</header>
 			<div className="stage">
 				<output className="readout">{value[0]}</output>
-				<Detent.Root
+				<Tambour.Root
 					className="picker"
 					aria-label="Number"
 					value={value}
 					onValueChange={setValue}
 					reducedMotion={reducedMotion}
 				>
-					<Detent.Wheel
+					<Tambour.Wheel
 						className="column wider"
 						items={NUMBERS}
 						loop
 						aria-label="Number"
 					/>
-				</Detent.Root>
+				</Tambour.Root>
 				<button type="button" className="button corner" onClick={jump}>
 					Jump to random
 				</button>
@@ -238,7 +243,7 @@ function CustomRows() {
 			</header>
 			<div className="stage">
 				<output className="readout">{committed[0]}</output>
-				<Detent.Root
+				<Tambour.Root
 					className="picker"
 					aria-label="Country"
 					value={value}
@@ -246,7 +251,7 @@ function CustomRows() {
 					onValueCommit={setCommitted}
 					reducedMotion={reducedMotion}
 				>
-					<Detent.Wheel
+					<Tambour.Wheel
 						className="column widest"
 						items={COUNTRIES}
 						getValue={getCode}
@@ -255,7 +260,7 @@ function CustomRows() {
 						loop
 						aria-label="Country"
 					/>
-				</Detent.Root>
+				</Tambour.Root>
 			</div>
 		</section>
 	);
@@ -387,9 +392,9 @@ main > header p { color: var(--muted); }
 .stage { position: relative; height: 320px; background: var(--stage); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .readout { position: absolute; top: 14px; left: 0; right: 0; text-align: center; font: 12px ui-monospace, Menlo, monospace; color: var(--muted); }
 
-[data-detent-band] { left: -10px; right: -10px; background: var(--surface); }
-[data-detent-item] { color: var(--muted); }
-[data-detent-item][data-selected] { color: var(--fg); }
+[data-tambour-band] { left: -10px; right: -10px; background: var(--surface); }
+[data-tambour-item] { color: var(--muted); }
+[data-tambour-item][data-selected] { color: var(--fg); }
 .column { flex: none; width: 58px; border-radius: 8px; }
 .column.wide { width: 72px; }
 .column.wider { width: 96px; }
@@ -422,7 +427,7 @@ function App() {
 				<main>
 					<style>{styles}</style>
 					<header>
-						<h1>detent</h1>
+						<h1>tambour</h1>
 						<p>React adapter playground, with live engine state.</p>
 					</header>
 					<div className="grid">

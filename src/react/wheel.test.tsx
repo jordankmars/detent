@@ -42,7 +42,7 @@ describe("rendering", () => {
 			</Root>,
 			{ wrapper: harness.wrapper },
 		);
-		expect(container.querySelectorAll("[data-detent-item]")).toHaveLength(11);
+		expect(container.querySelectorAll("[data-tambour-item]")).toHaveLength(11);
 	});
 
 	it("hides rows past the ends of a bounded wheel", () => {
@@ -54,7 +54,7 @@ describe("rendering", () => {
 			{ wrapper: harness.wrapper },
 		);
 		const visible = [
-			...container.querySelectorAll<HTMLElement>("[data-detent-item]"),
+			...container.querySelectorAll<HTMLElement>("[data-tambour-item]"),
 		].filter((row) => row.style.visibility !== "hidden");
 		expect(visible.map((row) => row.textContent)).toEqual(LETTERS);
 	});
@@ -102,7 +102,7 @@ describe("itemHeight", () => {
 			{ wrapper: harness.wrapper },
 		);
 		const wheel = wheels(container)[0];
-		const row = wheel.querySelector<HTMLElement>("[data-detent-item]");
+		const row = wheel.querySelector<HTMLElement>("[data-tambour-item]");
 		expect(row?.style.height).toBe("50px");
 		fireEvent.pointerDown(wheel, { clientY: 100, pointerId: 1, button: 0 });
 		fireEvent.pointerMove(wheel, { clientY: 50, pointerId: 1 });
@@ -307,7 +307,7 @@ describe("accessibility", () => {
 
 	it("hides rows from assistive technology", () => {
 		const { wheel } = mount();
-		for (const row of wheel.querySelectorAll("[data-detent-item]")) {
+		for (const row of wheel.querySelectorAll("[data-tambour-item]")) {
 			expect(row.getAttribute("aria-hidden")).toBe("true");
 		}
 	});

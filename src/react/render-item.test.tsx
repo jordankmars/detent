@@ -104,10 +104,10 @@ describe("text rows", () => {
 			{ wrapper: harness.wrapper },
 		);
 		const wheel = wheels(container)[0];
-		const rows = [...wheel.querySelectorAll("[data-detent-item]")];
+		const rows = [...wheel.querySelectorAll("[data-tambour-item]")];
 		press(wheel);
 		move(wheel, 3);
-		expect([...wheel.querySelectorAll("[data-detent-item]")]).toEqual(rows);
+		expect([...wheel.querySelectorAll("[data-tambour-item]")]).toEqual(rows);
 		expect(selectedText(wheel)).toBe("Item 13");
 	});
 

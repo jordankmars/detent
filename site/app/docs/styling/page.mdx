@@ -6,7 +6,7 @@ export const metadata = { title: "Styling" };
 
 <Lead>The same parts, in any look.</Lead>
 
-detent has a default look and no stylesheet to import. Set its variables, or style its parts with your own CSS. Here's one picker in five styles.
+tambour has a default look and no stylesheet to import. Set its variables, or style its parts with your own CSS. Here's one picker in five styles.
 
 ## Site
 
@@ -44,27 +44,27 @@ Set these on the Root or any parent.
 
 | Variable | Default |
 | --- | --- |
-| `--detent-gap` | `2px` |
-| `--detent-band-background` | `currentColor` at 9% |
-| `--detent-band-radius` | `10px` |
-| `--detent-band-inset` | `0` |
-| `--detent-wheel-flex` | `1 1 0` |
-| `--detent-item-font-size` | `21px` |
-| `--detent-item-color` | `currentColor` at 55% |
-| `--detent-disabled-opacity` | `0.5` |
+| `--tambour-gap` | `2px` |
+| `--tambour-band-background` | `currentColor` at 9% |
+| `--tambour-band-radius` | `10px` |
+| `--tambour-band-inset` | `0` |
+| `--tambour-wheel-flex` | `1 1 0` |
+| `--tambour-item-font-size` | `21px` |
+| `--tambour-item-color` | `currentColor` at 55% |
+| `--tambour-disabled-opacity` | `0.5` |
 
 ## Parts
 
-The parts are `data-detent-root`, `data-detent-band`, `data-detent-wheel` and `data-detent-item`, plus `data-selected` and `data-disabled`. The default styles have no specificity, so any CSS you write wins.
+The parts are `data-tambour-root`, `data-tambour-band`, `data-tambour-wheel` and `data-tambour-item`, plus `data-selected` and `data-disabled`. The default styles have no specificity, so any CSS you write wins.
 
 ```css
-[data-detent-band] { background: white; border-radius: 12px; }
-[data-detent-wheel] { flex: none; width: 64px; }
-[data-detent-item] { color: gray; font-size: 18px; }
-[data-detent-item][data-selected] { color: black; }
+[data-tambour-band] { background: white; border-radius: 12px; }
+[data-tambour-wheel] { flex: none; width: 64px; }
+[data-tambour-item] { color: gray; font-size: 18px; }
+[data-tambour-item][data-selected] { color: black; }
 ```
 
 ## Good to know
 
-- Cascade layers, including Tailwind's utilities, can't beat the defaults on the same property. Set a variable instead, like `[--detent-band-background:white]`.
-- Properties detent doesn't set, like a border or shadow, work as usual.
+- Cascade layers, including Tailwind's utilities, can't beat the defaults on the same property. Set a variable instead, like `[--tambour-band-background:white]`.
+- Properties tambour doesn't set, like a border or shadow, work as usual.

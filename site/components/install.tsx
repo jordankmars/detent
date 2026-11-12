@@ -2,10 +2,10 @@ import { highlight } from "@/lib/highlight";
 import { InstallTabs } from "./install-tabs";
 
 const COMMANDS = [
-	["pnpm", "pnpm add detent"],
-	["npm", "npm install detent"],
-	["yarn", "yarn add detent"],
-	["bun", "bun add detent"],
+	["pnpm", "pnpm add tambour"],
+	["npm", "npm install tambour"],
+	["yarn", "yarn add tambour"],
+	["bun", "bun add tambour"],
 ] as const;
 
 export async function Install() {
