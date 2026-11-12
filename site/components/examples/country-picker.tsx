@@ -1,7 +1,7 @@
 "use client";
 
-import { Detent } from "detent/react";
 import { useState } from "react";
+import { Tambour } from "tambour/react";
 
 const countries = [
 	{ code: "ar", name: "Argentina", flag: "🇦🇷" },
@@ -34,15 +34,15 @@ export function CountryPicker() {
 			<output className="absolute inset-x-0 top-4 text-center font-mono text-xs text-neutral-500 dark:text-neutral-400">
 				committed: {committed[0]}
 			</output>
-			<Detent.Root
+			<Tambour.Root
 				aria-label="Country"
 				value={value}
 				onValueChange={setValue}
 				onValueCommit={setCommitted}
-				className="[--detent-band-background:var(--color-neutral-100)] [--detent-band-inset:-10px] [--detent-item-color:var(--color-neutral-400)] dark:[--detent-band-background:var(--color-neutral-800)] dark:[--detent-item-color:var(--color-neutral-500)]"
+				className="[--tambour-band-background:var(--color-neutral-100)] [--tambour-band-inset:-10px] [--tambour-item-color:var(--color-neutral-400)] dark:[--tambour-band-background:var(--color-neutral-800)] dark:[--tambour-item-color:var(--color-neutral-500)]"
 			>
-				<Detent.Wheel
-					className="w-[230px] [--detent-wheel-flex:none]"
+				<Tambour.Wheel
+					className="w-[230px] [--tambour-wheel-flex:none]"
 					items={countries}
 					getValue={getCode}
 					getLabel={getName}
@@ -50,7 +50,7 @@ export function CountryPicker() {
 					loop
 					aria-label="Country"
 				/>
-			</Detent.Root>
+			</Tambour.Root>
 		</>
 	);
 }

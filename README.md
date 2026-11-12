@@ -1,6 +1,6 @@
-# detent
+# tambour
 
-[![CI](https://github.com/jordankmars/detent/actions/workflows/ci.yml/badge.svg)](https://github.com/jordankmars/detent/actions/workflows/ci.yml)
+[![CI](https://github.com/jordankmars/tambour/actions/workflows/ci.yml/badge.svg)](https://github.com/jordankmars/tambour/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 The iOS scroll-wheel picker for the web, for times, dates or any list.
@@ -8,17 +8,17 @@ The iOS scroll-wheel picker for the web, for times, dates or any list.
 <img src=".github/demo.gif" width="400" height="240" alt="A time picker with hour, minute and AM/PM wheels. The hour and minute wheels are flicked, coast and snap to an item, then AM is dragged to PM.">
 
 ```tsx
-<Detent.Root value={time} onValueChange={setTime}>
-  <Detent.Wheel items={hours} loop />
-  <Detent.Wheel items={minutes} loop />
-  <Detent.Wheel items={["AM", "PM"]} />
-</Detent.Root>
+<Tambour.Root value={time} onValueChange={setTime}>
+  <Tambour.Wheel items={hours} loop />
+  <Tambour.Wheel items={minutes} loop />
+  <Tambour.Wheel items={["AM", "PM"]} />
+</Tambour.Root>
 ```
 
 ## Install
 
 ```sh
-npm install detent
+npm install tambour
 ```
 
 Needs React 18 or later.
@@ -40,18 +40,18 @@ Needs React 18 or later.
 ## React
 
 ```tsx
-import { Detent } from "detent/react";
+import { Tambour } from "tambour/react";
 
 function TimePicker() {
   const [time, setTime] = useState(["9", "41", "AM"]);
 
   return (
-    <Detent.Root value={time} onValueChange={setTime} aria-label="Time">
-      <Detent.Wheel items={hours} loop aria-label="Hour" />
+    <Tambour.Root value={time} onValueChange={setTime} aria-label="Time">
+      <Tambour.Wheel items={hours} loop aria-label="Hour" />
       <span>:</span>
-      <Detent.Wheel items={minutes} loop aria-label="Minute" />
-      <Detent.Wheel items={["AM", "PM"]} aria-label="AM or PM" />
-    </Detent.Root>
+      <Tambour.Wheel items={minutes} loop aria-label="Minute" />
+      <Tambour.Wheel items={["AM", "PM"]} aria-label="AM or PM" />
+    </Tambour.Root>
   );
 }
 ```
@@ -59,7 +59,7 @@ function TimePicker() {
 No stylesheet to import. It renders the cylinder and center band as is, and
 inherits color and font from the page.
 
-### `Detent.Root`
+### `Tambour.Root`
 
 | Prop            | Type                   | Description                                                          |
 | --------------- | ---------------------- | -------------------------------------------------------------------- |
@@ -71,7 +71,7 @@ inherits color and font from the page.
 | `itemHeight`    | `number`               | Height of one item in pixels, default 36. Everything scales with it. |
 | `reducedMotion` | `boolean`              | Overrides the user's `prefers-reduced-motion` setting.               |
 
-### `Detent.Wheel`
+### `Tambour.Wheel`
 
 | Prop         | Type                                    | Description                                                               |
 | ------------ | --------------------------------------- | ------------------------------------------------------------------------- |
@@ -92,7 +92,7 @@ rows only render when their item changes.
 
 ### Wheel positions
 
-A wheel's position is its order among the Root's `Detent.Wheel`s, looking
+A wheel's position is its order among the Root's `Tambour.Wheel`s, looking
 through fragments and plain elements. Separators don't count. A wheel rendered
 inside your own component can't be seen from the Root, so give it an `index`.
 The same goes for wheels whose parent is a server component. Pass `index` to
@@ -107,11 +107,11 @@ moves to the nearest one and reports it through `onValueChange`.
 const [month, day, year] = value;
 const days = useMemo(() => daysIn(month, year), [month, year]);
 
-<Detent.Root value={value} onValueChange={setValue}>
-  <Detent.Wheel items={months} />
-  <Detent.Wheel items={days} />
-  <Detent.Wheel items={years} />
-</Detent.Root>;
+<Tambour.Root value={value} onValueChange={setValue}>
+  <Tambour.Wheel items={months} />
+  <Tambour.Wheel items={days} />
+  <Tambour.Wheel items={years} />
+</Tambour.Root>;
 ```
 
 A controlled wheel follows the parent: changing `value` animates to the new
@@ -124,29 +124,29 @@ when it comes to rest. As with controlled inputs, avoid updating `value` inside
 Default styles have no specificity, so any CSS you write wins.
 
 ```css
-[data-detent-band] { background: white; border-radius: 12px; }
-[data-detent-wheel] { flex: none; width: 64px; }
-[data-detent-item] { color: gray; font-size: 18px; }
-[data-detent-item][data-selected] { color: black; }
+[data-tambour-band] { background: white; border-radius: 12px; }
+[data-tambour-wheel] { flex: none; width: 64px; }
+[data-tambour-item] { color: gray; font-size: 18px; }
+[data-tambour-item][data-selected] { color: black; }
 ```
 
-The parts are `data-detent-root`, `data-detent-band`, `data-detent-wheel` and
-`data-detent-item`, plus `data-selected` and `data-disabled`.
+The parts are `data-tambour-root`, `data-tambour-band`, `data-tambour-wheel` and
+`data-tambour-item`, plus `data-selected` and `data-disabled`.
 
 Cascade layers, including Tailwind's utilities, can't beat those defaults on
 the same property. Set a variable instead, for example
-`[--detent-band-background:white]`:
+`[--tambour-band-background:white]`:
 
 | Variable                    | Default               |
 | --------------------------- | --------------------- |
-| `--detent-gap`              | `2px`                 |
-| `--detent-band-background`  | `currentColor` at 9%  |
-| `--detent-band-radius`      | `10px`                |
-| `--detent-band-inset`       | `0`                   |
-| `--detent-wheel-flex`       | `1 1 0`               |
-| `--detent-item-font-size`   | `21px`                |
-| `--detent-item-color`       | `currentColor` at 55% |
-| `--detent-disabled-opacity` | `0.5`                 |
+| `--tambour-gap`              | `2px`                 |
+| `--tambour-band-background`  | `currentColor` at 9%  |
+| `--tambour-band-radius`      | `10px`                |
+| `--tambour-band-inset`       | `0`                   |
+| `--tambour-wheel-flex`       | `1 1 0`               |
+| `--tambour-item-font-size`   | `21px`                |
+| `--tambour-item-color`       | `currentColor` at 55% |
+| `--tambour-disabled-opacity` | `0.5`                 |
 
 ## How it's built
 
@@ -158,9 +158,9 @@ likes.
 
 | Framework | Import path     | Status  |
 | --------- | --------------- | ------- |
-| React     | `detent/react`  | Ready   |
-| Vue       | `detent/vue`    | Planned |
-| Svelte    | `detent/svelte` | Planned |
+| React     | `tambour/react`  | Ready   |
+| Vue       | `tambour/vue`    | Planned |
+| Svelte    | `tambour/svelte` | Planned |
 
 ## Development
 
@@ -181,7 +181,7 @@ engine state for every wheel. It's the quickest way to try out a change.
 
 ```
 src/core     engine: physics, input and layout, no DOM
-src/react    React adapter, published as detent/react
+src/react    React adapter, published as tambour/react
 playground   Vite app for trying changes by hand
 site         docs site, Next.js exported to static files
 ```

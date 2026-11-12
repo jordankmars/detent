@@ -1,7 +1,7 @@
 "use client";
 
-import { Detent } from "detent/react";
 import { useState } from "react";
+import { Tambour } from "tambour/react";
 
 const numbers = Array.from({ length: 10_000 }, (_, i) =>
 	String(i).padStart(4, "0"),
@@ -16,19 +16,19 @@ export function LargeList() {
 
 	return (
 		<>
-			<Detent.Root
+			<Tambour.Root
 				aria-label="Number"
 				value={value}
 				onValueChange={setValue}
-				className="[--detent-band-background:var(--color-neutral-100)] [--detent-band-inset:-10px] [--detent-item-color:var(--color-neutral-400)] dark:[--detent-band-background:var(--color-neutral-800)] dark:[--detent-item-color:var(--color-neutral-500)]"
+				className="[--tambour-band-background:var(--color-neutral-100)] [--tambour-band-inset:-10px] [--tambour-item-color:var(--color-neutral-400)] dark:[--tambour-band-background:var(--color-neutral-800)] dark:[--tambour-item-color:var(--color-neutral-500)]"
 			>
-				<Detent.Wheel
-					className="w-24 [--detent-wheel-flex:none]"
+				<Tambour.Wheel
+					className="w-24 [--tambour-wheel-flex:none]"
 					items={numbers}
 					loop
 					aria-label="Number"
 				/>
-			</Detent.Root>
+			</Tambour.Root>
 			<button
 				type="button"
 				onClick={jump}

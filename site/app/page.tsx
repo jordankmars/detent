@@ -16,7 +16,7 @@ export default function Home() {
 				 * baseline sits 0.137em above the bottom of the line.
 				 */}
 				<div className="relative text-6xl leading-none sm:text-7xl">
-					<h1 className="font-semibold tracking-tight">Detent</h1>
+					<h1 className="font-semibold tracking-tight">Tambour</h1>
 					<span className="absolute top-full left-1/2 mt-2 -translate-x-1/2 sm:top-auto sm:bottom-[0.137em] sm:left-full sm:mt-0 sm:ml-3 sm:translate-x-0">
 						<a
 							href={AUTHOR_URL}

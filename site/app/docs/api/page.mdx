@@ -2,18 +2,18 @@ export const metadata = { title: "API" };
 
 # API
 
-<Lead>The parts of detent and the props they take.</Lead>
+<Lead>The parts of tambour and the props they take.</Lead>
 
 ## Anatomy
 
-Import `Detent` and put the parts together.
+Import `Tambour` and put the parts together.
 
 ```tsx
-import { Detent } from "detent/react";
+import { Tambour } from "tambour/react";
 
-<Detent.Root>
-	<Detent.Wheel items={items} />
-</Detent.Root>;
+<Tambour.Root>
+	<Tambour.Wheel items={items} />
+</Tambour.Root>;
 ```
 
 ## Components
@@ -78,6 +78,6 @@ Each wheel is a `spinbutton` that speaks its item's label, and the Root is a `gr
 
 - Only eleven rows are ever rendered, so a list of ten thousand costs the same as a list of ten.
 - A wheel at its end lets the page scroll instead of trapping it.
-- Wheels can take focus, but detent ships no focus styles.
+- Wheels can take focus, but tambour ships no focus styles.
 - With reduced motion, wheels go straight to an item.
 - Avoid updating `value` inside `startTransition`, or the wheel can snap back before the update lands.

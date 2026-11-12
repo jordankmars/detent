@@ -9,7 +9,7 @@ export const metadata = { title: "Items" };
 A wheel reports a value for each item and shows a label for it. For strings and numbers, those are the item itself.
 
 ```tsx
-<Detent.Wheel items={["AM", "PM"]} />
+<Tambour.Wheel items={["AM", "PM"]} />
 ```
 
 ## Values and labels
@@ -23,7 +23,7 @@ Pass `{ value, label }` to show one thing and report another. Here the wheel sho
 If your items have other names for those fields, read them with `getValue` and `getLabel`.
 
 ```tsx
-<Detent.Wheel
+<Tambour.Wheel
 	items={countries}
 	getValue={(country) => country.code}
 	getLabel={(country) => country.name}

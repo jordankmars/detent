@@ -38,6 +38,6 @@ export function selectedText(wheel: Element) {
 
 export function wheels(container: Element) {
 	return [
-		...container.querySelectorAll("[data-detent-wheel]"),
+		...container.querySelectorAll("[data-tambour-wheel]"),
 	] as HTMLElement[];
 }
