@@ -156,9 +156,12 @@ likes.
 
 ## Development
 
+Needs Node 20 or later and pnpm.
+
 ```sh
 pnpm install
 pnpm play        # playground at http://localhost:5173
+pnpm site:dev    # docs site at http://localhost:3000
 pnpm test        # unit tests
 pnpm typecheck
 pnpm lint
@@ -167,6 +170,13 @@ pnpm build
 
 The playground (`playground/main.tsx`) runs the React adapter and shows live
 engine state for every wheel. It's the quickest way to try out a change.
+
+```
+src/core     engine: physics, input and layout, no DOM
+src/react    React adapter, published as detent/react
+playground   Vite app for trying changes by hand
+site         docs site, Next.js exported to static files
+```
 
 ## Contributing
 
